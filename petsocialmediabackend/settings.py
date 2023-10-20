@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 import os
 from dotenv import load_dotenv
 from pathlib import Path
+from .constants import DEV, PROD
 
 load_dotenv()
 
@@ -79,12 +80,17 @@ WSGI_APPLICATION = 'petsocialmediabackend.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+if ENV == DEV:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': 'petsocialmediabackend',
+            'HOST': 'localhost',
+            'PORT': '3306',
+            'USER': 'root',
+            'PASSWORD': ''
+        }
     }
-}
 
 
 # Password validation
