@@ -1,0 +1,90 @@
+# Tentative Pet Social Media App DB Design
+
+每个用户有一个主页，每个用户可以添加多个宠物profile
+
+## User Table (Will be handled by jwt)
+
+- user_id
+- email (unique)
+- password hash
+- is_staff
+- first_name
+- last_name
+- created_at (will be handled by jwt?)
+
+
+## Pet Table
+
+- pet_id (will be chosen by user, must be unique)
+- user_id (foreign key)
+- name
+- type (Dog, cat, etc.)
+- breed (for now, leave this out)
+- birthday (optional)
+- created_at
+- updated_at
+
+
+## Media Table
+
+- media_id (primary key)
+- user_id (foreign key referencing user)
+- media_type (photo or video)
+- media_url
+- created_at
+- updated_at
+
+
+## Pet Media Association Table
+
+- pet_media_id (primary key)
+- pet_id (foreign key referencing pet)
+- media_id (foreign key referencing media)
+- tag_x_coordinate (浮点数，用于存储标记的x坐标)
+- tag_y_coordinate (浮点数，用于存储标记的y坐标)
+- created_at
+- updated_at
+
+（假如现在一张照片里tag 里三条狗。那么这个table 里就有三行）
+
+
+## Media Reaction Table
+
+- like_id (Primary Key)
+- user_id (Foreign Key referencing User)
+- media_id (Foreign Key referencing Media)
+- emoji_type (例如："thumbs_up", "heart", "support" 等)
+- created_at
+- updated_at
+
+
+## Comment Table
+
+- comment_id (Primary Key)
+- user_id (Foreign Key referencing User)
+- media_id (Foreign Key referencing Media)
+- parent_comment_id (Foreign Key referencing Comment itself, NULL if it's a top-level comment)
+- content
+- created_at
+- updated_at
+
+
+## Comment Reaction Table
+
+- reaction_id (Primary Key)
+- comment_id (Foreign Key referencing Comment)
+- user_id (Foreign Key referencing User)
+- reaction_type (e.g., 'like', 'heart', 'support', etc.)
+- created_at
+
+
+## Follower Table
+
+- many-to-many relationship design
+
+等做到这步再说吧
+
+## Direct Message Table
+
+
+## Service Table (Map Features)
