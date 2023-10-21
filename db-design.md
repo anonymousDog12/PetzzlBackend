@@ -10,7 +10,7 @@
 - is_staff
 - first_name
 - last_name
-- created_at (will be handled by jwt?)
+- created_at
 
 
 ## Pet Table
@@ -23,6 +23,8 @@
 - birthday (optional)
 - created_at
 - updated_at
+- gender
+
 
 
 ## Media Table
@@ -33,6 +35,8 @@
 - media_url
 - created_at
 - updated_at
+- caption
+- location
 
 
 ## Pet Media Association Table
