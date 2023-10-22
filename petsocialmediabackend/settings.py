@@ -45,6 +45,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
+    # In-Project Apps
+    'accounts',
+
     # Third Party Apps
     'rest_framework',
     'djoser',
