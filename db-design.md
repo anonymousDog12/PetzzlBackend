@@ -2,6 +2,10 @@
 
 每个用户有一个主页，每个用户可以添加多个宠物profile
 
+确实可以考虑 associate pet profile with more then one account
+- One owner user account at least
+- If more user wants to claim owner, they need approval
+
 ## User Table (Will be handled by jwt)
 
 - user_id
