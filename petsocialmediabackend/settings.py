@@ -196,7 +196,7 @@ else:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.mysql',
-            'NAME': 'PetAppProd',
+            'NAME': 'defaultdb',
             'HOST': 'db-mysql-sfo3-33365-do-user-14981029-0.c.db.ondigitalocean.com',
             'PORT': '25060',
             'USER': 'doadmin',
