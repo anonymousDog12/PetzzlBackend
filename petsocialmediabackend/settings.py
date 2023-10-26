@@ -192,7 +192,17 @@ if ENV == DEV:
             'PASSWORD': ''
         }
     }
-
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': 'PetAppProd',
+            'HOST': 'db-mysql-sfo3-33365-do-user-14981029-0.c.db.ondigitalocean.com',
+            'PORT': '25060',
+            'USER': 'doadmin',
+            'PASSWORD': os.environ.get('DATABASE_PASSWORD_DIGITALOCEAN')
+        }
+    }
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
