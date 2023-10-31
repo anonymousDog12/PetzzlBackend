@@ -32,9 +32,6 @@ SECRET_KEY = os.environ.get('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['petzzl.app', 'www.petzzl.app']
-
-
 # Application definition
 
 INSTALLED_APPS = [
@@ -47,16 +44,32 @@ INSTALLED_APPS = [
 
     # In-Project Apps
     'accounts',
+    'petprofiles',
 
     # Third Party Apps
     'rest_framework',
     'djoser',
     'corsheaders',
+    'storages',
 ]
+
+ALLOWED_HOSTS = [
+    'petzzl.app',
+    'www.petzzl.app',
+    '143.110.152.152'
+]
+
+if ENV == DEV:
+    ALLOWED_HOSTS += [
+        'localhost'
+    ]
+
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "https://localhost:3000",
+    "https://petzzl.app",
+    "https://www.petzzl.app",
 ]
 
 MIDDLEWARE = [
@@ -64,13 +77,16 @@ MIDDLEWARE = [
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
 
-    'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 
     'corsheaders.middleware.CorsMiddleware',
 ]
+
+if ENV == PROD:
+    MIDDLEWARE += ['django.middleware.csrf.CsrfViewMiddleware']
+
 
 # Authentication
 
@@ -94,7 +110,7 @@ SIMPLE_JWT = {
     'BLACKLIST_AFTER_ROTATION': False,
     'UPDATE_LAST_LOGIN': False,
     'ACCESS_TOKEN_LIFETIME': timedelta(hours=24),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=7), 
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
     'AUTH_TOKEN_CLASSES': (
         'rest_framework_simplejwt.tokens.AccessToken',
     )
@@ -227,3 +243,26 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'build', 'static')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+
+# DigitalOcean Spaces settings
+
+DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+
+AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
+AWS_STORAGE_BUCKET_NAME = 'petzzl'
+AWS_S3_ENDPOINT_URL = 'https://sfo3.digitaloceanspaces.com'
+AWS_S3_OBJECT_PARAMETERS = {
+    'CacheControl': 'max-age=86400',
+}
+
+AWS_DEFAULT_ACL = 'public-read'  # Reminder: Shouldn't store sensitive data
+AWS_QUERYSTRING_AUTH = False
+
+# Path Configurations
+if ENV == DEV:
+    ENV_FOLDER = 'dev'
+else:
+    ENV_FOLDER = 'prod'
+
+PROFILE_PIC_LOCATION = f"{ENV_FOLDER}/profile_pic"
