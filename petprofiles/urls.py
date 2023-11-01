@@ -13,4 +13,6 @@ urlpatterns = [
     path('get_all_pet_ids/', views.get_all_pet_ids, name='get_all_pet_ids'),
     path('check_pet_id_uniqueness/<str:pet_id>/',
          views.check_pet_id_uniqueness, name='check_pet_id_uniqueness'),
+    path('pet_profiles/<str:pet_id>/',
+         views.pet_profile_detail, name='pet_profile_detail'),
 ]
