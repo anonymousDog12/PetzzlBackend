@@ -18,6 +18,13 @@ from rest_framework.response import Response
 from .models import PetProfile
 from .serializers import PetProfileSerializer
 
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
+
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
 
 @api_view(['GET', 'POST'])
 @permission_classes([IsAuthenticated])
@@ -149,6 +156,9 @@ def save_resized_image(image, size, pet_id, unique_name):
 def upload_profile_pic(request):
     if request.method == 'POST':
         file = request.FILES['file']
+        if not allowed_file(file.name):
+            return Response({'error': 'File extension not allowed'}, status=status.HTTP_400_BAD_REQUEST)
+
         pet_id = request.data.get('pet_id', None)
 
         # Initialize boto3 client for Digital Ocean
