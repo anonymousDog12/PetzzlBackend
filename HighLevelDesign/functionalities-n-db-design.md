@@ -33,11 +33,47 @@
 - updated_at (automatic)
 
 
+------------
+
+# Media Upload MVP
+
+- Allow user to batch select (at most 9 at a time)
+- Image pre-processing during upload (to reduce size)
+
+
+```py
+
+from django.db import models
+from django.contrib.auth.models import User
+
+class Post(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    caption = models.TextField(blank=True)
+    location = models.CharField(max_length=255, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Post {self.id} by {self.user.username}"
+
+
+class Media(models.Model):
+    post = models.ForeignKey(Post, related_name='media', on_delete=models.CASCADE)
+    media_type = models.CharField(max_length=50)  # 'photo' or 'video'
+    media_url = models.URLField(max_length=200)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Media {self.id} of Post {self.post.id}"
+
+```
 
 ## Media Table
 
-- media_id (primary key)
+- media_id (auto-incremented, primary key)
 - user_id (foreign key referencing user)
+- pet_id (foreign key referencing pet)
 - media_type (photo or video)
 - media_url
 - created_at
@@ -46,11 +82,13 @@
 - location
 
 
+下面的那些 以后添加了再说
+
 ## Pet Media Association Table
 
-- pet_media_id (primary key)
-- pet_id (foreign key referencing pet)
+
 - media_id (foreign key referencing media)
+- tagged_pet_id (foreign key referencing pet)
 - tag_x_coordinate (浮点数，用于存储标记的x坐标)
 - tag_y_coordinate (浮点数，用于存储标记的y坐标)
 - created_at
