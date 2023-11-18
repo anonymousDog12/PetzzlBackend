@@ -36,13 +36,9 @@ def create_post_view(request):
     if not media_files:
         return JsonResponse({'error': 'At least one media file is required'}, status=400)
 
-    # Check if media files exceed the limit
-    if len(media_files) > 9:
-        return JsonResponse({'error': 'A maximum of 9 media files are allowed per post'}, status=400)
-
-    # Validate file types before processing uploads
+    # Check if media files are valid images
     for file in media_files:
-        if not is_valid_media_type(file.name):
+        if not is_valid_image_type(file.name):
             return JsonResponse({'error': f'Invalid file type for file {file.name}'}, status=400)
 
     # Process upload if all files are valid
@@ -159,6 +155,12 @@ def determine_media_type(url):
         return 'video'
     else:
         return 'unknown'  # or raise an exception
+
+
+def is_valid_image_type(filename):
+    allowed_image_extensions = {'.png', '.jpg', '.jpeg'}
+    extension = os.path.splitext(filename.lower())[1]
+    return extension in allowed_image_extensions
 
 
 def is_valid_media_type(filename):
