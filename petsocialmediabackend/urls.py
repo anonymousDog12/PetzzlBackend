@@ -12,6 +12,7 @@ urlpatterns = [
     path('auth/', include('djoser.urls.jwt')),
     path('api/accounts/', include('accounts.urls')),
     path('api/petprofiles/', include('petprofiles.urls')),
+    path('api/mediaposts/', include('mediaposts.urls')),
 ]
 
 urlpatterns += [re_path(r'^.*',
