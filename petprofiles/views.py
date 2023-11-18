@@ -159,6 +159,7 @@ def upload_profile_pic(request):
         if not allowed_file(file.name):
             return Response({'error': 'File extension not allowed'}, status=status.HTTP_400_BAD_REQUEST)
 
+        #  TODO: Add checks making sure user is the owner
         pet_id = request.data.get('pet_id', None)
 
         # Initialize boto3 client for Digital Ocean
