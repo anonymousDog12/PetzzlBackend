@@ -171,6 +171,44 @@ def is_valid_media_type(filename):
         return True
     return False
 
+###################### FETCH FEED ######################
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_feed(request):
+    # Fetch the latest post made by the user
+    user_latest_post = Post.objects.filter(
+        pet__user=request.user).order_by('-created_at').first()
+
+    # Fetch additional posts from other users
+    other_posts = Post.objects.exclude(
+        pet__user=request.user).order_by('-created_at')[:10]  # Fetch 10 other posts
+
+    feed = []
+    if user_latest_post:
+        feed.append(convert_post_to_response_format(user_latest_post))
+
+    for post in other_posts:
+        feed.append(convert_post_to_response_format(post))
+
+    return Response(feed)
+
+
+def convert_post_to_response_format(post):
+    media_data = [{
+        'media_id': media.id,
+        'full_size_url': media.image_url,
+        'thumbnail_medium_url': media.thumbnail_medium_url,
+        # Add other media details here
+    } for media in post.media.all()]
+
+    return {
+        'post_id': post.id,
+        'caption': post.caption,
+        'media': media_data,
+        # Add other post details here
+    }
 
 ###################### DELETE POST ######################
 
