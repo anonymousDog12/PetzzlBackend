@@ -172,7 +172,7 @@ def is_valid_media_type(filename):
     return False
 
 
-#######################################
+###################### DELETE POST ######################
 
 
 @api_view(['GET'])
