@@ -173,6 +173,8 @@ def is_valid_media_type(filename):
 
 ###################### FETCH FEED ######################
 
+# TODO: Enhance feed content
+
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
