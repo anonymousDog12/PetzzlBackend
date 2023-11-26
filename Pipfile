@@ -16,6 +16,7 @@ boto3 = "*"
 django-storages = "*"
 shortuuid = "*"
 pillow = "*"
+pillow-heif = "*"
 
 [dev-packages]
 
