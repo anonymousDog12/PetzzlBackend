@@ -1,3 +1,5 @@
+from datetime import datetime
+import shortuuid
 from django.db import transaction
 import boto3
 from urllib.parse import urlparse
@@ -15,9 +17,10 @@ from .models import PetProfile, Post, Media
 
 from PIL import Image
 from io import BytesIO
+import pillow_heif
 
-import shortuuid
-from datetime import datetime
+pillow_heif.register_heif_opener()
+
 
 ALLOWED_IMAGE_TYPES = {'.png', '.jpg', '.jpeg', '.heic'}
 
