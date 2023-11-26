@@ -41,12 +41,20 @@ def create_post_view(request):
         if not is_valid_image_type(file.name):
             return JsonResponse({'error': f'Invalid file type for file {file.name}'}, status=400)
 
-    # Process upload if all files are valid
+   # Process upload if all files are valid
     media_urls = upload_media_to_digital_ocean(media_files, pet_profile.pet_id)
     post = create_post_and_media(
         pet_profile, request.data.get('caption'), media_urls)
 
-    return JsonResponse({'message': 'Post created successfully', 'post_id': post.id}, status=201)
+    # Retrieve the thumbnail_small_url of the first media object of the post
+    thumbnail_small_url = post.media.first(
+    ).thumbnail_small_url if post.media.first() else None
+
+    return JsonResponse({
+        'message': 'Post created successfully',
+        'post_id': post.id,
+        'thumbnail_small_url': thumbnail_small_url  # Include this in the response
+    }, status=201)
 
 
 def validate_pet_profile(pet_id, user):
@@ -171,8 +179,48 @@ def is_valid_media_type(filename):
         return True
     return False
 
+###################### FETCH FEED ######################
 
-#######################################
+# TODO: Enhance feed content
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_feed(request):
+    # Fetch the latest post made by the user
+    user_latest_post = Post.objects.filter(
+        pet__user=request.user).order_by('-created_at').first()
+
+    # Fetch additional posts from other users
+    other_posts = Post.objects.exclude(
+        pet__user=request.user).order_by('-created_at')[:10]  # Fetch 10 other posts
+
+    feed = []
+    if user_latest_post:
+        feed.append(convert_post_to_response_format(user_latest_post))
+
+    for post in other_posts:
+        feed.append(convert_post_to_response_format(post))
+
+    return Response(feed)
+
+
+def convert_post_to_response_format(post):
+    media_data = [{
+        'media_id': media.id,
+        'full_size_url': media.image_url,
+        'thumbnail_medium_url': media.thumbnail_medium_url,
+        # Add other media details here
+    } for media in post.media.all()]
+
+    return {
+        'post_id': post.id,
+        'caption': post.caption,
+        'media': media_data,
+        # Add other post details here
+    }
+
+###################### GET POST ######################
 
 
 @api_view(['GET'])
@@ -206,6 +254,26 @@ def get_post_media(request, post_id, detail_level='overview'):
 
     return Response(response_data)
 
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def get_pet_posts(request, pet_id):
+    # Fetch all posts for a given pet profile
+    pet_posts = Post.objects.filter(pet_id=pet_id).order_by('-created_at')
+
+    response_data = []
+    for post in pet_posts:
+        first_media = post.media.first()  # Get the first media item
+        if first_media:
+            post_data = {
+                'post_id': post.id,
+                'caption': post.caption,
+                'thumbnail_url': first_media.thumbnail_small_url
+                # Add any other necessary post details
+            }
+            response_data.append(post_data)
+
+    return Response(response_data)
 
 ################## Post Deletion ####################
 
