@@ -1,3 +1,5 @@
+from datetime import datetime
+import shortuuid
 from django.db import transaction
 import boto3
 from urllib.parse import urlparse
@@ -15,9 +17,12 @@ from .models import PetProfile, Post, Media
 
 from PIL import Image
 from io import BytesIO
+import pillow_heif
 
-import shortuuid
-from datetime import datetime
+pillow_heif.register_heif_opener()
+
+
+ALLOWED_IMAGE_TYPES = {'.png', '.jpg', '.jpeg', '.heic'}
 
 
 @api_view(['POST'])
@@ -70,31 +75,32 @@ def upload_media_to_digital_ocean(media_files, pet_profile_id):
 
     for file in media_files:
         unique_filename = shortuuid.ShortUUID().random(length=8)
-        file_extension = file.name.split('.')[-1]
-        new_filename = f"{unique_filename}.{file_extension}"
+        file_extension_with_dot = os.path.splitext(
+            file.name.lower())[1]  # Includes the dot
+        new_filename = f"{unique_filename}{file_extension_with_dot}"
         file_path = f"{settings.ENV_FOLDER}/media_posts/{pet_profile_id}/{date_str}/{new_filename}"
 
-        if file_extension.lower() in ['jpg', 'jpeg', 'png']:
+        if file_extension_with_dot in ALLOWED_IMAGE_TYPES:
             image = Image.open(file)
 
             # Resize and upload original size
             resized_image = resize_image(image, 1200)
             resized_path = file_path.replace(
-                new_filename, f"{unique_filename}_resized.{file_extension}")
+                new_filename, f"{unique_filename}_resized{file_extension_with_dot}")
             resized_image_info = save_and_upload_image(
                 resized_image, resized_path, 'full_size')
 
             # Resize and upload medium thumbnail
             medium_thumbnail = resize_image(image, 600)
             medium_path = file_path.replace(
-                new_filename, f"{unique_filename}_medium.{file_extension}")
+                new_filename, f"{unique_filename}_medium{file_extension_with_dot}")
             medium_thumbnail_info = save_and_upload_image(
                 medium_thumbnail, medium_path, 'thumbnail_medium')
 
             # Resize and upload small thumbnail
             small_thumbnail = resize_image(image, 300)
             small_path = file_path.replace(
-                new_filename, f"{unique_filename}_small.{file_extension}")
+                new_filename, f"{unique_filename}_small{file_extension_with_dot}")
             small_thumbnail_info = save_and_upload_image(
                 small_thumbnail, small_path, 'thumbnail_small')
 
@@ -166,16 +172,14 @@ def determine_media_type(url):
 
 
 def is_valid_image_type(filename):
-    allowed_image_extensions = {'.png', '.jpg', '.jpeg'}
     extension = os.path.splitext(filename.lower())[1]
-    return extension in allowed_image_extensions
+    return extension in ALLOWED_IMAGE_TYPES
 
 
 def is_valid_media_type(filename):
-    allowed_image_extensions = {'.png', '.jpg', '.jpeg'}
     allowed_video_extensions = {'.mp4', '.mov'}
     extension = os.path.splitext(filename.lower())[1]
-    if extension in allowed_image_extensions or extension in allowed_video_extensions:
+    if extension in ALLOWED_IMAGE_TYPES or extension in allowed_video_extensions:
         return True
     return False
 
