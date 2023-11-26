@@ -19,7 +19,7 @@ from io import BytesIO
 import shortuuid
 from datetime import datetime
 
-ALLOWED_IMAGE_TYPES = {'.png', '.jpg', '.jpeg'}
+ALLOWED_IMAGE_TYPES = {'.png', '.jpg', '.jpeg', '.heic'}
 
 
 @api_view(['POST'])
