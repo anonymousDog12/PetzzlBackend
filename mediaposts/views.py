@@ -251,7 +251,7 @@ def get_post_media(request, post_id, detail_level='overview'):
 @permission_classes([AllowAny])
 def get_pet_posts(request, pet_id):
     # Fetch all posts for a given pet profile
-    pet_posts = Post.objects.filter(pet_id=pet_id)
+    pet_posts = Post.objects.filter(pet_id=pet_id).order_by('-created_at')
 
     response_data = []
     for post in pet_posts:
