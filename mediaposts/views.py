@@ -41,12 +41,20 @@ def create_post_view(request):
         if not is_valid_image_type(file.name):
             return JsonResponse({'error': f'Invalid file type for file {file.name}'}, status=400)
 
-    # Process upload if all files are valid
+   # Process upload if all files are valid
     media_urls = upload_media_to_digital_ocean(media_files, pet_profile.pet_id)
     post = create_post_and_media(
         pet_profile, request.data.get('caption'), media_urls)
 
-    return JsonResponse({'message': 'Post created successfully', 'post_id': post.id}, status=201)
+    # Retrieve the thumbnail_small_url of the first media object of the post
+    thumbnail_small_url = post.media.first(
+    ).thumbnail_small_url if post.media.first() else None
+
+    return JsonResponse({
+        'message': 'Post created successfully',
+        'post_id': post.id,
+        'thumbnail_small_url': thumbnail_small_url  # Include this in the response
+    }, status=201)
 
 
 def validate_pet_profile(pet_id, user):
