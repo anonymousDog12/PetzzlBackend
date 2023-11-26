@@ -8,4 +8,5 @@ urlpatterns = [
     path('feed/', views.get_feed, name='get_feed'),
     path('delete_post/<int:post_id>/',
          views.delete_post_view, name='delete_post'),
+    path('pet_posts/<str:pet_id>/', views.get_pet_posts, name='get_pet_posts'),
 ]
