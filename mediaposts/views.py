@@ -212,7 +212,7 @@ def convert_post_to_response_format(post):
         # Add other post details here
     }
 
-###################### DELETE POST ######################
+###################### GET POST ######################
 
 
 @api_view(['GET'])
