@@ -27,8 +27,12 @@ pillow_heif.register_heif_opener()
 
 ALLOWED_IMAGE_TYPES = {'.png', '.jpg', '.jpeg', '.heic'}
 ALLOWED_VIDEO_TYPES = {'.mp4', '.mov'}
-MAX_VIDEO_LENGTH = 30
+
 MAX_IMAGES_PER_POST = 9
+
+MAX_VIDEO_LENGTH = 30
+MAX_VIDEO_WIDTH = 1200
+MAX_VIDEO_HEIGHT = 1200
 
 
 @api_view(['POST'])
@@ -95,6 +99,20 @@ def get_video_duration(file):
     return duration
 
 
+def get_video_resolution(file):
+    # Read video file directly from the uploaded file in memory
+    cap = cv2.VideoCapture(file.temporary_file_path())
+
+    if not cap.isOpened():
+        raise ValueError("Unable to open the video file.")
+
+    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+    cap.release()
+    return width, height
+
+
 def upload_media_to_digital_ocean(media_files, pet_profile_id):
     media_data = []  # This will store dictionaries for each media file
     date_str = datetime.now().strftime('%Y-%m-%d')
@@ -140,14 +158,28 @@ def upload_media_to_digital_ocean(media_files, pet_profile_id):
             if get_video_duration(file) > MAX_VIDEO_LENGTH:
                 return JsonResponse({'error': 'Video length exceeds the allowed limit'}, status=400)
 
-            # For video files, upload as is without creating thumbnails
-            default_storage.save(file_path, file)
+            width, height = get_video_resolution(file)
+            if width > MAX_VIDEO_WIDTH or height > MAX_VIDEO_HEIGHT:
+                # Process the file for resizing
+                temp_output_path = "temp_resized_video.mp4"
+                resize_video(file.temporary_file_path(),
+                             temp_output_path, MAX_VIDEO_WIDTH, MAX_VIDEO_HEIGHT)
+                file_to_upload = open(temp_output_path, 'rb')
+            else:
+                file_to_upload = file
+
+            # Upload video file (resized or original)
+            default_storage.save(file_path, file_to_upload)
             media_url = default_storage.url(file_path)
             media_data.append({
                 'full_size_url': media_url,
                 'medium_thumbnail_url': None,
                 'small_thumbnail_url': None
             })
+
+            if 'temp_resized_video.mp4' in locals():
+                file_to_upload.close()
+                os.remove(temp_output_path)
 
         else:
             # For non-image files, upload as is
@@ -161,6 +193,39 @@ def upload_media_to_digital_ocean(media_files, pet_profile_id):
             media_data.append(media_item)
 
     return media_data
+
+
+def resize_video(input_path, output_path, max_width, max_height):
+    # Capture the video
+    cap = cv2.VideoCapture(input_path)
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # Define the codec
+
+    # Get original video properties
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+    # Calculate new dimensions
+    scaling_factor = min(max_width/width, max_height/height)
+    new_width = int(width * scaling_factor)
+    new_height = int(height * scaling_factor)
+
+    # Video writer to save the resized video
+    out = cv2.VideoWriter(output_path, fourcc, fps, (new_width, new_height))
+
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
+
+        # Resize the frame
+        resized_frame = cv2.resize(
+            frame, (new_width, new_height), interpolation=cv2.INTER_AREA)
+        out.write(resized_frame)
+
+    # Release resources
+    cap.release()
+    out.release()
 
 
 def resize_image(image, max_size):
