@@ -266,11 +266,10 @@ def create_post_and_media(pet_profile, caption, media_data):
 
 
 def determine_media_type(url):
-    # TODO: Double check the logic here
-
-    if url.endswith('.jpg'):
+    extension = os.path.splitext(url.lower())[1]
+    if extension in ALLOWED_IMAGE_TYPES:
         return 'photo'
-    elif url.endswith(('.mp4', '.mov')):
+    elif extension in ALLOWED_VIDEO_TYPES:
         return 'video'
     else:
         return 'unknown'  # or raise an exception
