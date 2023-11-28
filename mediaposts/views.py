@@ -23,7 +23,6 @@ import cv2
 
 pillow_heif.register_heif_opener()
 
-# TODO: allow max number of images to be 9 in a single post
 
 ALLOWED_IMAGE_TYPES = {'.png', '.jpg', '.jpeg', '.heic'}
 ALLOWED_VIDEO_TYPES = {'.mp4', '.mov'}
