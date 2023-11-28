@@ -1,4 +1,5 @@
 from datetime import datetime
+import tempfile
 import shortuuid
 from django.db import transaction
 import boto3
@@ -88,27 +89,51 @@ def validate_pet_profile(pet_id, user):
 
 
 def get_video_duration(file):
-    # Read video file directly from the uploaded file in memory
-    cap = cv2.VideoCapture(file.temporary_file_path())
-    fps = cap.get(cv2.CAP_PROP_FPS)  # Frames per second
+    # Create a NamedTemporaryFile if file is InMemoryUploadedFile
+    if hasattr(file, 'temporary_file_path'):
+        file_path = file.temporary_file_path()
+    else:
+        with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+            for chunk in file.chunks():
+                temp_file.write(chunk)
+            file_path = temp_file.name
+
+    cap = cv2.VideoCapture(file_path)
+    fps = cap.get(cv2.CAP_PROP_FPS)
     frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     duration = frame_count / fps
-
     cap.release()
+
+    # Clean up if using NamedTemporaryFile
+    if not hasattr(file, 'temporary_file_path'):
+        os.remove(file_path)
+
     return duration
 
 
 def get_video_resolution(file):
-    # Read video file directly from the uploaded file in memory
-    cap = cv2.VideoCapture(file.temporary_file_path())
+    # Create a NamedTemporaryFile if file is InMemoryUploadedFile
+    if hasattr(file, 'temporary_file_path'):
+        file_path = file.temporary_file_path()
+    else:
+        with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+            for chunk in file.chunks():
+                temp_file.write(chunk)
+            file_path = temp_file.name
+
+    cap = cv2.VideoCapture(file_path)
 
     if not cap.isOpened():
         raise ValueError("Unable to open the video file.")
 
     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-
     cap.release()
+
+    # Clean up if using NamedTemporaryFile
+    if not hasattr(file, 'temporary_file_path'):
+        os.remove(file_path)
+
     return width, height
 
 
