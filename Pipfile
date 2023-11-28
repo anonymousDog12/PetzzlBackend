@@ -17,6 +17,7 @@ django-storages = "*"
 shortuuid = "*"
 pillow = "*"
 pillow-heif = "*"
+opencv-python-headless = "*"
 
 [dev-packages]
 

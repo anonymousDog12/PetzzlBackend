@@ -18,11 +18,17 @@ from .models import PetProfile, Post, Media
 from PIL import Image
 from io import BytesIO
 import pillow_heif
+import cv2
+
 
 pillow_heif.register_heif_opener()
 
+# TODO: allow max number of images to be 9 in a single post
 
 ALLOWED_IMAGE_TYPES = {'.png', '.jpg', '.jpeg', '.heic'}
+ALLOWED_VIDEO_TYPES = {'.mp4', '.mov'}
+MAX_VIDEO_LENGTH = 30
+MAX_IMAGES_PER_POST = 9
 
 
 @api_view(['POST'])
@@ -36,29 +42,38 @@ def create_post_view(request):
     except PermissionError:
         return JsonResponse({'error': 'User not authorized'}, status=403)
 
-    # Retrieve media files from the request
     media_files = request.FILES.getlist('media_files')
     if not media_files:
         return JsonResponse({'error': 'At least one media file is required'}, status=400)
 
-    # Check if media files are valid images
-    for file in media_files:
-        if not is_valid_image_type(file.name):
-            return JsonResponse({'error': f'Invalid file type for file {file.name}'}, status=400)
+    image_count = sum(1 for file in media_files if os.path.splitext(
+        file.name.lower())[1] in ALLOWED_IMAGE_TYPES)
+    video_count = sum(1 for file in media_files if os.path.splitext(
+        file.name.lower())[1] in ALLOWED_VIDEO_TYPES)
 
-   # Process upload if all files are valid
+    if image_count > MAX_IMAGES_PER_POST:
+        return JsonResponse({'error': f'Cannot upload more than {MAX_IMAGES_PER_POST} images in a single post'}, status=400)
+
+    if video_count > 1 or (video_count == 1 and image_count > 0):
+        return JsonResponse({'error': 'Only multiple images or a single video can be uploaded in one post'}, status=400)
+
     media_urls = upload_media_to_digital_ocean(media_files, pet_profile.pet_id)
+    # Check if media_urls is a JsonResponse (error case)
+    if isinstance(media_urls, JsonResponse):
+        return media_urls
+
     post = create_post_and_media(
         pet_profile, request.data.get('caption'), media_urls)
 
-    # Retrieve the thumbnail_small_url of the first media object of the post
-    thumbnail_small_url = post.media.first(
-    ).thumbnail_small_url if post.media.first() else None
+    first_media = post.media.first()
+    media_url = first_media.media_url if first_media else None
+    thumbnail_small_url = first_media.thumbnail_small_url if first_media else None
 
     return JsonResponse({
         'message': 'Post created successfully',
         'post_id': post.id,
-        'thumbnail_small_url': thumbnail_small_url  # Include this in the response
+        'media_url': media_url,
+        'thumbnail_small_url': thumbnail_small_url
     }, status=201)
 
 
@@ -69,14 +84,24 @@ def validate_pet_profile(pet_id, user):
     return pet_profile
 
 
+def get_video_duration(file):
+    # Read video file directly from the uploaded file in memory
+    cap = cv2.VideoCapture(file.temporary_file_path())
+    fps = cap.get(cv2.CAP_PROP_FPS)  # Frames per second
+    frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    duration = frame_count / fps
+
+    cap.release()
+    return duration
+
+
 def upload_media_to_digital_ocean(media_files, pet_profile_id):
     media_data = []  # This will store dictionaries for each media file
     date_str = datetime.now().strftime('%Y-%m-%d')
 
     for file in media_files:
         unique_filename = shortuuid.ShortUUID().random(length=8)
-        file_extension_with_dot = os.path.splitext(
-            file.name.lower())[1]  # Includes the dot
+        file_extension_with_dot = os.path.splitext(file.name.lower())[1]
         new_filename = f"{unique_filename}{file_extension_with_dot}"
         file_path = f"{settings.ENV_FOLDER}/media_posts/{pet_profile_id}/{date_str}/{new_filename}"
 
@@ -110,6 +135,19 @@ def upload_media_to_digital_ocean(media_files, pet_profile_id):
                 'small_thumbnail_url': small_thumbnail_info['url']
             }
             media_data.append(media_item)
+
+        elif file_extension_with_dot in ALLOWED_VIDEO_TYPES:
+            if get_video_duration(file) > MAX_VIDEO_LENGTH:
+                return JsonResponse({'error': 'Video length exceeds the allowed limit'}, status=400)
+
+            # For video files, upload as is without creating thumbnails
+            default_storage.save(file_path, file)
+            media_url = default_storage.url(file_path)
+            media_data.append({
+                'full_size_url': media_url,
+                'medium_thumbnail_url': None,
+                'small_thumbnail_url': None
+            })
 
         else:
             # For non-image files, upload as is
@@ -153,7 +191,7 @@ def create_post_and_media(pet_profile, caption, media_data):
     for index, item in enumerate(media_data):
         Media.objects.create(
             post=post,
-            image_url=item['full_size_url'],
+            media_url=item['full_size_url'],
             thumbnail_medium_url=item['medium_thumbnail_url'],
             thumbnail_small_url=item['small_thumbnail_url'],
             media_type=determine_media_type(item['full_size_url']),
@@ -163,6 +201,8 @@ def create_post_and_media(pet_profile, caption, media_data):
 
 
 def determine_media_type(url):
+    # TODO: Double check the logic here
+
     if url.endswith('.jpg'):
         return 'photo'
     elif url.endswith(('.mp4', '.mov')):
@@ -177,9 +217,8 @@ def is_valid_image_type(filename):
 
 
 def is_valid_media_type(filename):
-    allowed_video_extensions = {'.mp4', '.mov'}
     extension = os.path.splitext(filename.lower())[1]
-    if extension in ALLOWED_IMAGE_TYPES or extension in allowed_video_extensions:
+    if extension in ALLOWED_IMAGE_TYPES or extension in ALLOWED_VIDEO_TYPES:
         return True
     return False
 
@@ -212,7 +251,7 @@ def get_feed(request):
 def convert_post_to_response_format(post):
     media_data = [{
         'media_id': media.id,
-        'full_size_url': media.image_url,
+        'full_size_url': media.media_url,
         'thumbnail_medium_url': media.thumbnail_medium_url,
         # Add other media details here
     } for media in post.media.all()]
@@ -245,7 +284,7 @@ def get_post_media(request, post_id, detail_level='overview'):
         for media in post.media.all():
             media_data.append({
                 'media_id': media.id,
-                'full_size_url': media.image_url,
+                'full_size_url': media.media_url,
                 # Add other media details here
             })
 
@@ -294,7 +333,7 @@ def delete_post_view(request, post_id):
     with transaction.atomic():
         # Delete media files from Digital Ocean
         for media in post.media.all():
-            delete_media_from_digital_ocean(media.image_url)
+            delete_media_from_digital_ocean(media.media_url)
             delete_media_from_digital_ocean(media.thumbnail_medium_url)
             delete_media_from_digital_ocean(media.thumbnail_small_url)
 
