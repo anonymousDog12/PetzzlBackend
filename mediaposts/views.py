@@ -22,6 +22,9 @@ import pillow_heif
 import cv2
 
 
+# TODO: refactor this file
+
+
 pillow_heif.register_heif_opener()
 
 
@@ -137,6 +140,45 @@ def get_video_resolution(file):
     return width, height
 
 
+def create_video_thumbnail(file, sizes=(600, 300)):
+    # Check if the file object has 'temporary_file_path' method
+    if hasattr(file, 'temporary_file_path'):
+        file_path = file.temporary_file_path()
+    else:
+        # If not, write the file to a temporary file
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.mp4') as temp_file:
+            for chunk in file.chunks():
+                temp_file.write(chunk)
+            file_path = temp_file.name
+
+    # Capture the first frame of the video
+    cap = cv2.VideoCapture(file_path)
+    success, image = cap.read()
+    cap.release()
+
+    # Clean up the temporary file if it was created
+    if not hasattr(file, 'temporary_file_path'):
+        os.remove(file_path)
+
+    if success:
+        # Convert the frame to an Image object
+        image_pil = Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+
+        thumbnails = {}
+        for size in sizes:
+            # Resize to create a thumbnail
+            thumbnail = resize_image(image_pil, size)
+            # Save the thumbnail to a BytesIO object
+            buffer = BytesIO()
+            thumbnail.save(buffer, format='JPEG')
+            buffer.seek(0)
+            thumbnails[size] = buffer
+
+        return thumbnails
+    else:
+        return None
+
+
 def upload_media_to_digital_ocean(media_files, pet_profile_id):
     media_data = []  # This will store dictionaries for each media file
     date_str = datetime.now().strftime('%Y-%m-%d')
@@ -192,13 +234,26 @@ def upload_media_to_digital_ocean(media_files, pet_profile_id):
             else:
                 file_to_upload = file
 
+             # Generate thumbnail for the video
+            video_thumbnails = create_video_thumbnail(file)
+            if video_thumbnails:
+                for size, thumbnail in video_thumbnails.items():
+                    thumbnail_path = file_path.replace(
+                        new_filename, f"{unique_filename}_thumbnail_{size}.jpg")
+                    default_storage.save(thumbnail_path, thumbnail)
+                    thumbnail_url = default_storage.url(thumbnail_path)
+                    if size == 600:
+                        medium_thumbnail_url = thumbnail_url
+                    elif size == 300:
+                        small_thumbnail_url = thumbnail_url
+
             # Upload video file (resized or original)
             default_storage.save(file_path, file_to_upload)
             media_url = default_storage.url(file_path)
             media_data.append({
                 'full_size_url': media_url,
-                'medium_thumbnail_url': None,
-                'small_thumbnail_url': None
+                'medium_thumbnail_url': medium_thumbnail_url,
+                'small_thumbnail_url': small_thumbnail_url
             })
 
             if 'temp_resized_video.mp4' in locals():
@@ -206,15 +261,7 @@ def upload_media_to_digital_ocean(media_files, pet_profile_id):
                 os.remove(temp_output_path)
 
         else:
-            # For non-image files, upload as is
-            default_storage.save(file_path, file)
-            media_url = default_storage.url(file_path)
-            media_item = {
-                'full_size_url': media_url,
-                'medium_thumbnail_url': '',  # Non-image files won't have thumbnails
-                'small_thumbnail_url': ''
-            }
-            media_data.append(media_item)
+            return JsonResponse({'error': f'Unsupported file type: {file_extension_with_dot}'}, status=400)
 
     return media_data
 
