@@ -91,52 +91,22 @@ def validate_pet_profile(pet_id, user):
     return pet_profile
 
 
-def get_video_duration(file):
-    # Create a NamedTemporaryFile if file is InMemoryUploadedFile
-    if hasattr(file, 'temporary_file_path'):
-        file_path = file.temporary_file_path()
-    else:
-        with tempfile.NamedTemporaryFile(delete=False) as temp_file:
-            for chunk in file.chunks():
-                temp_file.write(chunk)
-            file_path = temp_file.name
-
+def get_video_duration(file_path):
     cap = cv2.VideoCapture(file_path)
     fps = cap.get(cv2.CAP_PROP_FPS)
     frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     duration = frame_count / fps
     cap.release()
-
-    # Clean up if using NamedTemporaryFile
-    if not hasattr(file, 'temporary_file_path'):
-        os.remove(file_path)
-
     return duration
 
 
-def get_video_resolution(file):
-    # Create a NamedTemporaryFile if file is InMemoryUploadedFile
-    if hasattr(file, 'temporary_file_path'):
-        file_path = file.temporary_file_path()
-    else:
-        with tempfile.NamedTemporaryFile(delete=False) as temp_file:
-            for chunk in file.chunks():
-                temp_file.write(chunk)
-            file_path = temp_file.name
-
+def get_video_resolution(file_path):
     cap = cv2.VideoCapture(file_path)
-
     if not cap.isOpened():
         raise ValueError("Unable to open the video file.")
-
     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     cap.release()
-
-    # Clean up if using NamedTemporaryFile
-    if not hasattr(file, 'temporary_file_path'):
-        os.remove(file_path)
-
     return width, height
 
 
@@ -147,8 +117,13 @@ def create_video_thumbnail(file, sizes=(600, 300)):
     else:
         # If not, write the file to a temporary file
         with tempfile.NamedTemporaryFile(delete=False, suffix='.mp4') as temp_file:
-            for chunk in file.chunks():
-                temp_file.write(chunk)
+            if hasattr(file, 'chunks'):
+                # file is an InMemoryUploadedFile
+                for chunk in file.chunks():
+                    temp_file.write(chunk)
+            else:
+                # file is an already opened file (like _io.BufferedReader)
+                temp_file.write(file.read())
             file_path = temp_file.name
 
     # Capture the first frame of the video
@@ -221,21 +196,31 @@ def upload_media_to_digital_ocean(media_files, pet_profile_id):
             media_data.append(media_item)
 
         elif file_extension_with_dot in ALLOWED_VIDEO_TYPES:
-            if get_video_duration(file) > MAX_VIDEO_LENGTH:
+            if hasattr(file, 'temporary_file_path'):
+                video_file_path = file.temporary_file_path()
+            else:
+                with tempfile.NamedTemporaryFile(delete=False, suffix=file_extension_with_dot) as temp_file:
+                    for chunk in file.chunks():
+                        temp_file.write(chunk)
+                    video_file_path = temp_file.name
+
+            # Check video duration and resolution
+            if get_video_duration(video_file_path) > MAX_VIDEO_LENGTH:
                 return JsonResponse({'error': 'Video length exceeds the allowed limit'}, status=400)
 
-            width, height = get_video_resolution(file)
+            width, height = get_video_resolution(video_file_path)
+
+            # Resize if necessary
             if width > MAX_VIDEO_WIDTH or height > MAX_VIDEO_HEIGHT:
-                # Process the file for resizing
-                temp_output_path = "temp_resized_video.mp4"
-                resize_video(file.temporary_file_path(),
-                             temp_output_path, MAX_VIDEO_WIDTH, MAX_VIDEO_HEIGHT)
+                # Process the file for resizing and get the path of the resized video
+                temp_output_path = resize_video(
+                    video_file_path, MAX_VIDEO_WIDTH, MAX_VIDEO_HEIGHT)
                 file_to_upload = open(temp_output_path, 'rb')
             else:
-                file_to_upload = file
+                file_to_upload = open(video_file_path, 'rb')
 
-             # Generate thumbnail for the video
-            video_thumbnails = create_video_thumbnail(file)
+            # Generate thumbnail for the video
+            video_thumbnails = create_video_thumbnail(file_to_upload)
             if video_thumbnails:
                 for size, thumbnail in video_thumbnails.items():
                     thumbnail_path = file_path.replace(
@@ -256,9 +241,13 @@ def upload_media_to_digital_ocean(media_files, pet_profile_id):
                 'small_thumbnail_url': small_thumbnail_url
             })
 
-            if 'temp_resized_video.mp4' in locals():
-                file_to_upload.close()
+            # Clean up
+            file_to_upload.close()
+            if width > MAX_VIDEO_WIDTH or height > MAX_VIDEO_HEIGHT:
+                # Delete the temporary resized video file
                 os.remove(temp_output_path)
+            if not hasattr(file, 'temporary_file_path'):
+                os.remove(video_file_path)
 
         else:
             return JsonResponse({'error': f'Unsupported file type: {file_extension_with_dot}'}, status=400)
@@ -266,7 +255,7 @@ def upload_media_to_digital_ocean(media_files, pet_profile_id):
     return media_data
 
 
-def resize_video(input_path, output_path, max_width, max_height):
+def resize_video(input_path, max_width, max_height):
     # Capture the video
     cap = cv2.VideoCapture(input_path)
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # Define the codec
@@ -281,22 +270,28 @@ def resize_video(input_path, output_path, max_width, max_height):
     new_width = int(width * scaling_factor)
     new_height = int(height * scaling_factor)
 
-    # Video writer to save the resized video
-    out = cv2.VideoWriter(output_path, fourcc, fps, (new_width, new_height))
+    # Create a unique temporary file for the resized video
+    with tempfile.NamedTemporaryFile(delete=False, suffix='.mp4') as temp_output_file:
+        # Video writer to save the resized video
+        out = cv2.VideoWriter(temp_output_file.name, fourcc,
+                              fps, (new_width, new_height))
 
-    while True:
-        ret, frame = cap.read()
-        if not ret:
-            break
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                break
 
-        # Resize the frame
-        resized_frame = cv2.resize(
-            frame, (new_width, new_height), interpolation=cv2.INTER_AREA)
-        out.write(resized_frame)
+            # Resize the frame
+            resized_frame = cv2.resize(
+                frame, (new_width, new_height), interpolation=cv2.INTER_AREA)
+            out.write(resized_frame)
 
-    # Release resources
-    cap.release()
-    out.release()
+        # Release resources
+        cap.release()
+        out.release()
+
+        # Return the path of the temporary file
+        return temp_output_file.name
 
 
 def resize_image(image, max_size):
