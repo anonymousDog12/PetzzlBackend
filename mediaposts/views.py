@@ -37,6 +37,8 @@ MAX_VIDEO_LENGTH = 30
 MAX_VIDEO_WIDTH = 1200
 MAX_VIDEO_HEIGHT = 1200
 
+############################### CREATE POST ###############################
+
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -84,74 +86,20 @@ def create_post_view(request):
     }, status=201)
 
 
-def validate_pet_profile(pet_id, user):
-    pet_profile = PetProfile.objects.get(pet_id=pet_id)
-    if pet_profile.user != user:
-        raise PermissionError
-    return pet_profile
+def create_post_and_media(pet_profile, caption, media_data):
+    post = Post.objects.create(pet=pet_profile, caption=caption)
+    for index, item in enumerate(media_data):
+        Media.objects.create(
+            post=post,
+            media_url=item['full_size_url'],
+            thumbnail_medium_url=item['medium_thumbnail_url'],
+            thumbnail_small_url=item['small_thumbnail_url'],
+            media_type=determine_media_type(item['full_size_url']),
+            order=index
+        )
+    return post
 
-
-def get_video_duration(file_path):
-    cap = cv2.VideoCapture(file_path)
-    fps = cap.get(cv2.CAP_PROP_FPS)
-    frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    duration = frame_count / fps
-    cap.release()
-    return duration
-
-
-def get_video_resolution(file_path):
-    cap = cv2.VideoCapture(file_path)
-    if not cap.isOpened():
-        raise ValueError("Unable to open the video file.")
-    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    cap.release()
-    return width, height
-
-
-def create_video_thumbnail(file, sizes=(600, 300)):
-    # Check if the file object has 'temporary_file_path' method
-    if hasattr(file, 'temporary_file_path'):
-        file_path = file.temporary_file_path()
-    else:
-        # If not, write the file to a temporary file
-        with tempfile.NamedTemporaryFile(delete=False, suffix='.mp4') as temp_file:
-            if hasattr(file, 'chunks'):
-                # file is an InMemoryUploadedFile
-                for chunk in file.chunks():
-                    temp_file.write(chunk)
-            else:
-                # file is an already opened file (like _io.BufferedReader)
-                temp_file.write(file.read())
-            file_path = temp_file.name
-
-    # Capture the first frame of the video
-    cap = cv2.VideoCapture(file_path)
-    success, image = cap.read()
-    cap.release()
-
-    # Clean up the temporary file if it was created
-    if not hasattr(file, 'temporary_file_path'):
-        os.remove(file_path)
-
-    if success:
-        # Convert the frame to an Image object
-        image_pil = Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
-
-        thumbnails = {}
-        for size in sizes:
-            # Resize to create a thumbnail
-            thumbnail = resize_image(image_pil, size)
-            # Save the thumbnail to a BytesIO object
-            buffer = BytesIO()
-            thumbnail.save(buffer, format='JPEG')
-            buffer.seek(0)
-            thumbnails[size] = buffer
-
-        return thumbnails
-    else:
-        return None
+############################### Utilities: Uploading to DO ###############################
 
 
 def upload_media_to_digital_ocean(media_files, pet_profile_id):
@@ -255,6 +203,71 @@ def upload_media_to_digital_ocean(media_files, pet_profile_id):
     return media_data
 
 
+########################## Utilities: Video Processing ##########################
+
+def get_video_duration(file_path):
+    cap = cv2.VideoCapture(file_path)
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    duration = frame_count / fps
+    cap.release()
+    return duration
+
+
+def get_video_resolution(file_path):
+    cap = cv2.VideoCapture(file_path)
+    if not cap.isOpened():
+        raise ValueError("Unable to open the video file.")
+    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    cap.release()
+    return width, height
+
+
+def create_video_thumbnail(file, sizes=(600, 300)):
+    # Check if the file object has 'temporary_file_path' method
+    if hasattr(file, 'temporary_file_path'):
+        file_path = file.temporary_file_path()
+    else:
+        # If not, write the file to a temporary file
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.mp4') as temp_file:
+            if hasattr(file, 'chunks'):
+                # file is an InMemoryUploadedFile
+                for chunk in file.chunks():
+                    temp_file.write(chunk)
+            else:
+                # file is an already opened file (like _io.BufferedReader)
+                temp_file.write(file.read())
+            file_path = temp_file.name
+
+    # Capture the first frame of the video
+    cap = cv2.VideoCapture(file_path)
+    success, image = cap.read()
+    cap.release()
+
+    # Clean up the temporary file if it was created
+    if not hasattr(file, 'temporary_file_path'):
+        os.remove(file_path)
+
+    if success:
+        # Convert the frame to an Image object
+        image_pil = Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+
+        thumbnails = {}
+        for size in sizes:
+            # Resize to create a thumbnail
+            thumbnail = resize_image(image_pil, size)
+            # Save the thumbnail to a BytesIO object
+            buffer = BytesIO()
+            thumbnail.save(buffer, format='JPEG')
+            buffer.seek(0)
+            thumbnails[size] = buffer
+
+        return thumbnails
+    else:
+        return None
+
+
 def resize_video(input_path, max_width, max_height):
     # Capture the video
     cap = cv2.VideoCapture(input_path)
@@ -294,6 +307,8 @@ def resize_video(input_path, max_width, max_height):
         return temp_output_file.name
 
 
+########################## Utilities: Image Processing ##########################
+
 def resize_image(image, max_size):
     ratio = max_size / max(image.width, image.height)
     new_size = (int(image.width * ratio), int(image.height * ratio))
@@ -317,18 +332,14 @@ def save_and_upload_image(image, file_path, tag):
     return {'url': media_url, 'tag': tag}
 
 
-def create_post_and_media(pet_profile, caption, media_data):
-    post = Post.objects.create(pet=pet_profile, caption=caption)
-    for index, item in enumerate(media_data):
-        Media.objects.create(
-            post=post,
-            media_url=item['full_size_url'],
-            thumbnail_medium_url=item['medium_thumbnail_url'],
-            thumbnail_small_url=item['small_thumbnail_url'],
-            media_type=determine_media_type(item['full_size_url']),
-            order=index
-        )
-    return post
+############################### Utility Functions ###############################
+
+
+def validate_pet_profile(pet_id, user):
+    pet_profile = PetProfile.objects.get(pet_id=pet_id)
+    if pet_profile.user != user:
+        raise PermissionError
+    return pet_profile
 
 
 def determine_media_type(url):
@@ -352,7 +363,8 @@ def is_valid_media_type(filename):
         return True
     return False
 
-###################### FETCH FEED ######################
+
+############################### FETCH FEED ###############################
 
 # TODO: Enhance feed content
 
@@ -393,7 +405,7 @@ def convert_post_to_response_format(post):
         # Add other post details here
     }
 
-###################### GET POST ######################
+############################### GET POST ###############################
 
 
 @api_view(['GET'])
@@ -448,7 +460,7 @@ def get_pet_posts(request, pet_id):
 
     return Response(response_data)
 
-################## Post Deletion ####################
+############################### POST DELETION ###############################
 
 
 @api_view(['DELETE'])
