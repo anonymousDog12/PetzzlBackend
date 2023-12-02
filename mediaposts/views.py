@@ -332,38 +332,6 @@ def save_and_upload_image(image, file_path, tag):
     return {'url': media_url, 'tag': tag}
 
 
-############################### Utility Functions ###############################
-
-
-def validate_pet_profile(pet_id, user):
-    pet_profile = PetProfile.objects.get(pet_id=pet_id)
-    if pet_profile.user != user:
-        raise PermissionError
-    return pet_profile
-
-
-def determine_media_type(url):
-    extension = os.path.splitext(url.lower())[1]
-    if extension in ALLOWED_IMAGE_TYPES:
-        return 'photo'
-    elif extension in ALLOWED_VIDEO_TYPES:
-        return 'video'
-    else:
-        return 'unknown'  # or raise an exception
-
-
-def is_valid_image_type(filename):
-    extension = os.path.splitext(filename.lower())[1]
-    return extension in ALLOWED_IMAGE_TYPES
-
-
-def is_valid_media_type(filename):
-    extension = os.path.splitext(filename.lower())[1]
-    if extension in ALLOWED_IMAGE_TYPES or extension in ALLOWED_VIDEO_TYPES:
-        return True
-    return False
-
-
 ############################### FETCH FEED ###############################
 
 # TODO: Enhance feed content
@@ -505,3 +473,35 @@ def delete_media_from_digital_ocean(url):
         except Exception as e:
             print(
                 f"Failed to delete {object_name} from {bucket_name}. Error: {e}")
+
+
+############################### Utility Functions ###############################
+
+
+def validate_pet_profile(pet_id, user):
+    pet_profile = PetProfile.objects.get(pet_id=pet_id)
+    if pet_profile.user != user:
+        raise PermissionError
+    return pet_profile
+
+
+def determine_media_type(url):
+    extension = os.path.splitext(url.lower())[1]
+    if extension in ALLOWED_IMAGE_TYPES:
+        return 'photo'
+    elif extension in ALLOWED_VIDEO_TYPES:
+        return 'video'
+    else:
+        return 'unknown'  # or raise an exception
+
+
+def is_valid_image_type(filename):
+    extension = os.path.splitext(filename.lower())[1]
+    return extension in ALLOWED_IMAGE_TYPES
+
+
+def is_valid_media_type(filename):
+    extension = os.path.splitext(filename.lower())[1]
+    if extension in ALLOWED_IMAGE_TYPES or extension in ALLOWED_VIDEO_TYPES:
+        return True
+    return False
