@@ -97,15 +97,22 @@ class Media(models.Model):
 （假如现在一张照片里tag 里三条狗。那么这个table 里就有三行）
 
 
-## Media Reaction Table
+**Decided to have 2 separate apps for post reaction and media reaction.** There might be some common logics, but we could refactor those into common util functions later.
+
+This way the code is more clear and mainable and flexible to change
+
+## Post Reaction Table
 
 - like_id (Primary Key)
 - user_id (Foreign Key referencing User)
 - media_id (Foreign Key referencing Media)
-- emoji_type (例如："thumbs_up", "heart", "support" 等)
 - created_at
 - updated_at
 
+
+## Comment Reaction Table
+
+Will create when we get there
 
 ## Comment Table
 
