@@ -1,3 +1,4 @@
+from rest_framework.permissions import AllowAny
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -42,3 +43,15 @@ def unlike_post(request, post_id, pet_profile_id):
             return Response({'message': 'Not liked yet'}, status=status.HTTP_404_NOT_FOUND)
     except (Post.DoesNotExist, PetProfile.DoesNotExist):
         return Response({'message': 'Post or Pet Profile not found'}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def get_like_count(request, post_id):
+    try:
+        post = Post.objects.get(pk=post_id)
+        like_count = PostReaction.objects.filter(
+            post=post, reaction_type='like').count()
+        return Response({'like_count': like_count}, status=status.HTTP_200_OK)
+    except Post.DoesNotExist:
+        return Response({'message': 'Post not found'}, status=status.HTTP_404_NOT_FOUND)
