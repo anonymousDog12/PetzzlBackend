@@ -1,0 +1,167 @@
+{
+	"info": {
+		"_postman_id": "7fc0cdc8-2808-4ac4-8b4b-206aeeb3f4c2",
+		"name": "PetMediaPosts",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "9967878"
+	},
+	"item": [
+		{
+			"name": "PostWithMedia",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "JWT eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzAwMzQ1MjUyLCJpYXQiOjE3MDAyNTg4NTIsImp0aSI6IjY3NzQ3OWE3YTQ0OTRjNzU5NGEyYjEyNDNiMTJmZTQyIiwidXNlcl9pZCI6MTR9.5dHYj-pI0JMCPQIb7wzZqP0Pz5V97B2SFSv9LssPaok",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"value": "multipart/form-data",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "pet_id",
+							"value": "222",
+							"type": "text"
+						},
+						{
+							"key": "caption",
+							"value": "This is a caption",
+							"type": "text"
+						},
+						{
+							"key": "media_files",
+							"type": "file",
+							"src": "/Users/erin/Desktop/Simulator Screenshot - iPhone 13 Pro - 2023-11-12 at 15.01.31.png"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://localhost:8000/api/mediaposts/create_post/",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"mediaposts",
+						"create_post",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GetMediaPostsByPostAndSizes",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8000/api/mediaposts/post_media/10/overview/",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"mediaposts",
+						"post_media",
+						"10",
+						"overview",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "DeleteMediaPostByPostID",
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "JWT eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzAwNjMzNjEzLCJpYXQiOjE3MDA1NDcyMTMsImp0aSI6IjcxNzczMThiNDYwYzRhYTk5NzZkMmQ3OWU2ODQzNjE3IiwidXNlcl9pZCI6MTN9.MxNhpx-ofW8O9sX0bEuj9C2dOxf6NyvHwsDwu3C8MNU",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:8000/api/mediaposts/delete_post/14/",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"mediaposts",
+						"delete_post",
+						"14",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GetFeed",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "JWT eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzAwNzg5MTQ1LCJpYXQiOjE3MDA3MDI3NDUsImp0aSI6IjkxZTk2ZjVkZTc5ZTRkNDc5ZGMzNzA1OTAxMDkyYzkwIiwidXNlcl9pZCI6MTR9.XA0GKuRmWLaQSUNAQfrVNIu89u57AGjnzPnWI7LYfL4",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:8000/api/mediaposts/feed/",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"mediaposts",
+						"feed",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GetAllPostCoversByPetID",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8000/api/mediaposts/pet_posts/222/",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"mediaposts",
+						"pet_posts",
+						"222",
+						""
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
