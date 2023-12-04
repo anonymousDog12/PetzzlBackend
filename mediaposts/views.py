@@ -366,12 +366,19 @@ def convert_post_to_response_format(post):
         # Add other media details here
     } for media in post.media.all()]
 
+    pet_profile_pic_url = post.pet.profile_pic_thumbnail_small
+    pet_id = post.pet.pet_id
+    pet_type = post.pet.pet_type
+
     return {
         'post_id': post.id,
         'caption': post.caption,
         'media': media_data,
-        # Add other post details here
+        'pet_id': pet_id,
+        'pet_profile_pic': pet_profile_pic_url,
+        'pet_type': pet_type,  # Include pet type
     }
+
 
 ############################### GET POST ###############################
 
