@@ -13,6 +13,7 @@ urlpatterns = [
     path('api/accounts/', include('accounts.urls')),
     path('api/petprofiles/', include('petprofiles.urls')),
     path('api/mediaposts/', include('mediaposts.urls')),
+    path('api/postreactions/', include('postreactions.urls')),
 ]
 
 urlpatterns += [re_path(r'^.*',
