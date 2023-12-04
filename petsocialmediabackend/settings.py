@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'accounts',
     'petprofiles',
     'mediaposts',
+    'postreactions',
 
     # Third Party Apps
     'rest_framework',
