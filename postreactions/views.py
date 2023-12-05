@@ -69,3 +69,19 @@ def check_like_status(request, post_id, pet_profile_id):
         return Response({'liked': liked}, status=status.HTTP_200_OK)
     except (Post.DoesNotExist, PetProfile.DoesNotExist):
         return Response({'message': 'Post or Pet Profile not found'}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def get_likers_of_post(request, post_id):
+    try:
+        post = Post.objects.get(pk=post_id)
+        reactions = PostReaction.objects.filter(
+            post=post, reaction_type='like').select_related('pet_profile')
+        likers = reactions.values(
+            'pet_profile__pet_id',
+            'pet_profile__profile_pic_thumbnail_small'
+        )
+        return Response({'likers': list(likers)}, status=status.HTTP_200_OK)
+    except Post.DoesNotExist:
+        return Response({'message': 'Post not found'}, status=status.HTTP_404_NOT_FOUND)
