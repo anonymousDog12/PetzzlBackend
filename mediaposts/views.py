@@ -370,6 +370,9 @@ def convert_post_to_response_format(post):
     pet_id = post.pet.pet_id
     pet_type = post.pet.pet_type
 
+    # Format the created_at date to a string (e.g., 'YYYY-MM-DD')
+    created_at_str = post.created_at.strftime('%Y-%m-%d')
+
     return {
         'post_id': post.id,
         'caption': post.caption,
@@ -377,6 +380,7 @@ def convert_post_to_response_format(post):
         'pet_id': pet_id,
         'pet_profile_pic': pet_profile_pic_url,
         'pet_type': pet_type,  # Include pet type
+        'posted_date': created_at_str  # Include the post creation date
     }
 
 
@@ -388,6 +392,9 @@ def convert_post_to_response_format(post):
 def get_post_media(request, post_id, detail_level='overview'):
     post = get_object_or_404(Post, pk=post_id)
     media_data = []
+
+    # Format the created_at date to a string (e.g., 'YYYY-MM-DD')
+    created_at_str = post.created_at.strftime('%Y-%m-%d')
 
     # TODO: make detail levels global constants
     if detail_level == 'overview':
@@ -409,7 +416,7 @@ def get_post_media(request, post_id, detail_level='overview'):
         'post_id': post.id,
         'caption': post.caption,
         'media': media_data,
-        # Add other post details here
+        'posted_date': created_at_str,  # Include the post creation date
     }
 
     return Response(response_data)
