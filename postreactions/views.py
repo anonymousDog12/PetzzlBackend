@@ -64,11 +64,13 @@ def check_like_status(request, post_id, pet_profile_id):
         post = Post.objects.get(pk=post_id)
         pet_profile = PetProfile.objects.get(
             pk=pet_profile_id, user=request.user)
-        liked = PostReaction.objects.filter(
-            pet_profile=pet_profile, post=post, reaction_type='like').exists()
-        return Response({'liked': liked}, status=status.HTTP_200_OK)
     except (Post.DoesNotExist, PetProfile.DoesNotExist):
-        return Response({'message': 'Post or Pet Profile not found'}, status=status.HTTP_404_NOT_FOUND)
+        # If either post or pet profile does not exist, return liked as False
+        return Response({'liked': False}, status=status.HTTP_200_OK)
+
+    liked = PostReaction.objects.filter(
+        pet_profile=pet_profile, post=post, reaction_type='like').exists()
+    return Response({'liked': liked}, status=status.HTTP_200_OK)
 
 
 @api_view(['GET'])
