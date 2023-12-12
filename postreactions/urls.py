@@ -8,7 +8,7 @@ urlpatterns = [
          unlike_post, name='unlike_post'),
     path('posts/<int:post_id>/likecount/',
          get_like_count, name='get_like_count'),
-    path('posts/<int:post_id>/likestatus/<int:pet_profile_id>/',
+    path('posts/<int:post_id>/likestatus/<str:pet_profile_id>/',
          check_like_status, name='check_like_status'),
     path('posts/<int:post_id>/likers/',
          get_likers_of_post, name='get_likers_of_post'),
