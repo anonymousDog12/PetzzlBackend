@@ -1,3 +1,4 @@
+from .models import Post, PostReaction
 from rest_framework.permissions import AllowAny
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
@@ -82,7 +83,8 @@ def get_likers_of_post(request, post_id):
             post=post, reaction_type='like').select_related('pet_profile')
         likers = reactions.values(
             'pet_profile__pet_id',
-            'pet_profile__profile_pic_thumbnail_small'
+            'pet_profile__profile_pic_thumbnail_small',
+            'pet_profile__pet_type'
         )
         return Response({'likers': list(likers)}, status=status.HTTP_200_OK)
     except Post.DoesNotExist:
