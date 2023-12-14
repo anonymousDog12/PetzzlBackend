@@ -37,7 +37,16 @@ class PetProfile(models.Model):
         ]
     )
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    pet_name = models.CharField(max_length=255)
+    pet_name = models.CharField(
+        max_length=50,
+        validators=[
+            MinLengthValidator(2),
+            RegexValidator(
+                regex='^[a-zA-Z0-9]+$',
+                message="Pet name must be alphanumeric only."
+            )
+        ]
+    )
     pet_type = models.CharField(max_length=50, choices=PET_TYPE_CHOICES)
 
     # Optional fields
