@@ -42,8 +42,8 @@ class PetProfile(models.Model):
         validators=[
             MinLengthValidator(2),
             RegexValidator(
-                regex='^[a-zA-Z0-9]+$',
-                message="Pet name must be alphanumeric only."
+                regex='^[a-zA-Z0-9 ]+$',
+                message="Pet name must be alphanumeric and may include spaces."
             )
         ]
     )
@@ -64,6 +64,10 @@ class PetProfile(models.Model):
 
     def __str__(self):
         return f"{self.pet_name} ({self.pet_type}) - {self.user.email}"
+
+    def save(self, *args, **kwargs):
+        self.pet_name = ' '.join(self.pet_name.split())
+        super(PetProfile, self).save(*args, **kwargs)
 
     class Meta:
         ordering = ['created_at']
