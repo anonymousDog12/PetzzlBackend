@@ -1,3 +1,4 @@
+from rest_framework.pagination import PageNumberPagination
 from datetime import datetime
 import tempfile
 import shortuuid
@@ -340,22 +341,19 @@ def save_and_upload_image(image, file_path, tag):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_feed(request):
-    # Fetch the latest post made by the user
-    user_latest_post = Post.objects.filter(
-        pet__user=request.user).order_by('-created_at').first()
+    paginator = PageNumberPagination()
+    paginator.page_size = 5
 
-    # Fetch additional posts from other users
-    other_posts = Post.objects.exclude(
-        pet__user=request.user).order_by('-created_at')[:10]  # Fetch 10 other posts
+    # Fetch all posts, including the latest post of the user
+    all_posts = Post.objects.order_by('-created_at')
 
-    feed = []
-    if user_latest_post:
-        feed.append(convert_post_to_response_format(user_latest_post))
+    # Apply pagination to the queryset
+    paginated_posts = paginator.paginate_queryset(all_posts, request)
 
-    for post in other_posts:
-        feed.append(convert_post_to_response_format(post))
+    # Convert posts to the response format
+    feed = [convert_post_to_response_format(post) for post in paginated_posts]
 
-    return Response(feed)
+    return paginator.get_paginated_response(feed)
 
 
 def convert_post_to_response_format(post):
