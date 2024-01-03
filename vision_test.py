@@ -4,8 +4,8 @@ import io
 from dotenv import load_dotenv
 
 
-def detect_labels(image_path):
-    """Detects labels in the file."""
+def is_pet_or_animal_image(image_path, confidence_threshold=0.5):
+    """Checks if the image is of a pet/animal."""
     client = vision_v1.ImageAnnotatorClient()
 
     with io.open(image_path, 'rb') as image_file:
@@ -15,9 +15,15 @@ def detect_labels(image_path):
     response = client.label_detection(image=image)
     labels = response.label_annotations
 
-    print('Labels:')
+    pet_related_terms = ['pet', 'dog', 'cat', 'animal',
+                         'bird', 'fish', 'hamster', 'rabbit', 'reptile']
     for label in labels:
-        print(label.description)
+        if label.description.lower() in pet_related_terms and label.score >= confidence_threshold:
+            print(
+                f"Detected: {label.description} with {label.score * 100:.2f}% confidence")
+            return True
+
+    return False
 
 
 if __name__ == "__main__":
@@ -33,5 +39,6 @@ if __name__ == "__main__":
         exit()
 
     # Replace 'path_to_your_image.jpg' with the path to your test image file
-    test_image_path = './lp_image.jpeg'
-    detect_labels(test_image_path)
+    test_image_path = '/Users/erin/Downloads/IMG_7190.HEIC'
+    result = is_pet_or_animal_image(test_image_path)
+    print("Is this a pet/animal image?", result)
