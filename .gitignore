@@ -1,6 +1,9 @@
 # Created by https://www.toptal.com/developers/gitignore/api/django,visualstudiocode,pycharm,intellij+all,python
 # Edit at https://www.toptal.com/developers/gitignore?templates=django,visualstudiocode,pycharm,intellij+all,python
 
+
+petzzl-410121-2139197e3d45.json
+
 tmp
 tmp/*
 

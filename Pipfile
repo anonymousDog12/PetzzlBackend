@@ -18,6 +18,7 @@ shortuuid = "*"
 pillow = "*"
 pillow-heif = "*"
 opencv-python-headless = "*"
+google-cloud-vision = "*"
 
 [dev-packages]
 
