@@ -16,10 +16,11 @@ def is_suitable_pet_image(image_path, confidence_threshold=0.5):
     # Checking for pets/animals
     response_labels = client.label_detection(image=image)
     labels = response_labels.label_annotations
-    pet_related_terms = ['pet', 'dog', 'cat', 'animal',
+    pet_related_terms = ['pet', 'dog', 'cat', 'animal', 'horse', 'turtle',
                          'bird', 'fish', 'hamster', 'rabbit', 'reptile']
     is_animal = False
     for label in labels:
+        print(f"Label: {label.description}, Score: {label.score}")
         if label.description.lower() in pet_related_terms and label.score >= confidence_threshold:
             print(
                 f"Detected animal: {label.description} with {label.score * 100:.2f}% confidence")
@@ -31,10 +32,14 @@ def is_suitable_pet_image(image_path, confidence_threshold=0.5):
         response_safe_search = client.safe_search_detection(image=image)
         safe = response_safe_search.safe_search_annotation
 
+        # Print the safe search detection results
+        print(
+            f"Adult content score: {safe.adult}, Violence score: {safe.violence}")
+
         # Defining thresholds for inappropriate content
         thresholds = {
-            'adult': vision_v1.Likelihood.VERY_UNLIKELY,
-            'violence': vision_v1.Likelihood.VERY_UNLIKELY
+            'adult': vision_v1.Likelihood.POSSIBLE,
+            'violence': vision_v1.Likelihood.POSSIBLE
         }
 
         if safe.adult < thresholds['adult'] and safe.violence < thresholds['violence']:
@@ -60,6 +65,6 @@ if __name__ == "__main__":
         exit()
 
     # Replace 'path_to_your_image.jpg' with the path to your test image file
-    test_image_path = '/Users/erin/Desktop/nude-girl-with-dog-by-spano-michael-spano.jpg'
+    test_image_path = '/Users/erin/Desktop/lp_image2.jpeg'
     result = is_suitable_pet_image(test_image_path)
     print("Is this image suitable for Petzzl app?", result)
