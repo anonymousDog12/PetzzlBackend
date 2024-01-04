@@ -1,3 +1,4 @@
+from google.cloud import vision_v1
 import os
 from datetime import datetime
 from io import BytesIO
@@ -53,6 +54,16 @@ def create_post_view(request):
     if image_count > MAX_IMAGES_PER_POST:
         return JsonResponse({'error': f'Cannot upload more than {MAX_IMAGES_PER_POST} images in a single post'}, status=400)
 
+    # Validate each image before saving
+    for media_file in media_files:
+        if not is_suitable_pet_image_in_memory(media_file):
+            return JsonResponse({
+                'error': 'Content policy violation',
+                'error_type': 'inappropriate_content',
+                'message': 'Our AI filter spotted something that might not meet our content guidelines. Please review and try again. If this seems mistaken, please contact admin@petzzl.app for help.',
+            }, status=400)
+
+    # After validation, continue to upload and create post
     media_urls = upload_media_to_digital_ocean(media_files, pet_profile.pet_id)
     # Check if media_urls is a JsonResponse (error case)
     if isinstance(media_urls, JsonResponse):
@@ -159,6 +170,39 @@ def save_and_upload_image(image, file_path, tag):
     default_storage.save(file_path, buffer)
     media_url = default_storage.url(file_path)
     return {'url': media_url, 'tag': tag}
+
+########################## Utilities: Image Filtering ##########################
+
+
+def is_suitable_pet_image_in_memory(image_file, confidence_threshold=0.5):
+    client = vision_v1.ImageAnnotatorClient()
+
+    content = image_file.read()
+    image = vision_v1.Image(content=content)
+
+    response_labels = client.label_detection(image=image)
+    labels = response_labels.label_annotations
+    pet_related_terms = ['pet', 'dog', 'cat', 'animal', 'horse', 'turtle',
+                         'bird', 'fish', 'hamster', 'rabbit', 'reptile']
+    is_animal = False
+
+    for label in labels:
+        if label.description.lower() in pet_related_terms and label.score >= confidence_threshold:
+            is_animal = True
+            break
+
+    if is_animal:
+        response_safe_search = client.safe_search_detection(image=image)
+        safe = response_safe_search.safe_search_annotation
+        thresholds = {
+            'adult': vision_v1.Likelihood.POSSIBLE,
+            'violence': vision_v1.Likelihood.POSSIBLE
+        }
+
+        if safe.adult < thresholds['adult'] and safe.violence < thresholds['violence']:
+            return True
+
+    return False
 
 
 ############################### FETCH FEED ###############################
