@@ -1,27 +1,23 @@
-from rest_framework.pagination import PageNumberPagination
-from datetime import datetime
-import tempfile
-import shortuuid
-from django.db import transaction
-import boto3
-from urllib.parse import urlparse
-from .models import Post
-from rest_framework.response import Response
-from rest_framework.permissions import AllowAny
-from django.shortcuts import get_object_or_404
 import os
-from django.core.files.storage import default_storage
-from django.http import JsonResponse
-from django.conf import settings
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
-from .models import PetProfile, Post, Media
-
-from PIL import Image
+from datetime import datetime
 from io import BytesIO
-import pillow_heif
-import cv2
+from urllib.parse import urlparse
 
+import boto3
+import pillow_heif
+import shortuuid
+from django.conf import settings
+from django.core.files.storage import default_storage
+from django.db import transaction
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+from PIL import Image
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+
+from .models import Media, PetProfile, Post
 
 # TODO: refactor this file
 
@@ -30,13 +26,8 @@ pillow_heif.register_heif_opener()
 
 
 ALLOWED_IMAGE_TYPES = {'.png', '.jpg', '.jpeg', '.heic'}
-ALLOWED_VIDEO_TYPES = {'.mp4', '.mov'}
 
 MAX_IMAGES_PER_POST = 9
-
-MAX_VIDEO_LENGTH = 30
-MAX_VIDEO_WIDTH = 1200
-MAX_VIDEO_HEIGHT = 1200
 
 ############################### CREATE POST ###############################
 
@@ -58,14 +49,9 @@ def create_post_view(request):
 
     image_count = sum(1 for file in media_files if os.path.splitext(
         file.name.lower())[1] in ALLOWED_IMAGE_TYPES)
-    video_count = sum(1 for file in media_files if os.path.splitext(
-        file.name.lower())[1] in ALLOWED_VIDEO_TYPES)
 
     if image_count > MAX_IMAGES_PER_POST:
         return JsonResponse({'error': f'Cannot upload more than {MAX_IMAGES_PER_POST} images in a single post'}, status=400)
-
-    if video_count > 1 or (video_count == 1 and image_count > 0):
-        return JsonResponse({'error': 'Only multiple images or a single video can be uploaded in one post'}, status=400)
 
     media_urls = upload_media_to_digital_ocean(media_files, pet_profile.pet_id)
     # Check if media_urls is a JsonResponse (error case)
@@ -144,168 +130,10 @@ def upload_media_to_digital_ocean(media_files, pet_profile_id):
             }
             media_data.append(media_item)
 
-        elif file_extension_with_dot in ALLOWED_VIDEO_TYPES:
-            if hasattr(file, 'temporary_file_path'):
-                video_file_path = file.temporary_file_path()
-            else:
-                with tempfile.NamedTemporaryFile(delete=False, suffix=file_extension_with_dot) as temp_file:
-                    for chunk in file.chunks():
-                        temp_file.write(chunk)
-                    video_file_path = temp_file.name
-
-            # Check video duration and resolution
-            if get_video_duration(video_file_path) > MAX_VIDEO_LENGTH:
-                return JsonResponse({'error': 'Video length exceeds the allowed limit'}, status=400)
-
-            width, height = get_video_resolution(video_file_path)
-
-            # Resize if necessary
-            if width > MAX_VIDEO_WIDTH or height > MAX_VIDEO_HEIGHT:
-                # Process the file for resizing and get the path of the resized video
-                temp_output_path = resize_video(
-                    video_file_path, MAX_VIDEO_WIDTH, MAX_VIDEO_HEIGHT)
-                file_to_upload = open(temp_output_path, 'rb')
-            else:
-                file_to_upload = open(video_file_path, 'rb')
-
-            # Generate thumbnail for the video
-            video_thumbnails = create_video_thumbnail(file_to_upload)
-            if video_thumbnails:
-                for size, thumbnail in video_thumbnails.items():
-                    thumbnail_path = file_path.replace(
-                        new_filename, f"{unique_filename}_thumbnail_{size}.jpg")
-                    default_storage.save(thumbnail_path, thumbnail)
-                    thumbnail_url = default_storage.url(thumbnail_path)
-                    if size == 600:
-                        medium_thumbnail_url = thumbnail_url
-                    elif size == 300:
-                        small_thumbnail_url = thumbnail_url
-
-            # Upload video file (resized or original)
-            default_storage.save(file_path, file_to_upload)
-            media_url = default_storage.url(file_path)
-            media_data.append({
-                'full_size_url': media_url,
-                'medium_thumbnail_url': medium_thumbnail_url,
-                'small_thumbnail_url': small_thumbnail_url
-            })
-
-            # Clean up
-            file_to_upload.close()
-            if width > MAX_VIDEO_WIDTH or height > MAX_VIDEO_HEIGHT:
-                # Delete the temporary resized video file
-                os.remove(temp_output_path)
-            if not hasattr(file, 'temporary_file_path'):
-                os.remove(video_file_path)
-
         else:
             return JsonResponse({'error': f'Unsupported file type: {file_extension_with_dot}'}, status=400)
 
     return media_data
-
-
-########################## Utilities: Video Processing ##########################
-
-def get_video_duration(file_path):
-    cap = cv2.VideoCapture(file_path)
-    fps = cap.get(cv2.CAP_PROP_FPS)
-    frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    duration = frame_count / fps
-    cap.release()
-    return duration
-
-
-def get_video_resolution(file_path):
-    cap = cv2.VideoCapture(file_path)
-    if not cap.isOpened():
-        raise ValueError("Unable to open the video file.")
-    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    cap.release()
-    return width, height
-
-
-def create_video_thumbnail(file, sizes=(600, 300)):
-    # Check if the file object has 'temporary_file_path' method
-    if hasattr(file, 'temporary_file_path'):
-        file_path = file.temporary_file_path()
-    else:
-        # If not, write the file to a temporary file
-        with tempfile.NamedTemporaryFile(delete=False, suffix='.mp4') as temp_file:
-            if hasattr(file, 'chunks'):
-                # file is an InMemoryUploadedFile
-                for chunk in file.chunks():
-                    temp_file.write(chunk)
-            else:
-                # file is an already opened file (like _io.BufferedReader)
-                temp_file.write(file.read())
-            file_path = temp_file.name
-
-    # Capture the first frame of the video
-    cap = cv2.VideoCapture(file_path)
-    success, image = cap.read()
-    cap.release()
-
-    # Clean up the temporary file if it was created
-    if not hasattr(file, 'temporary_file_path'):
-        os.remove(file_path)
-
-    if success:
-        # Convert the frame to an Image object
-        image_pil = Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
-
-        thumbnails = {}
-        for size in sizes:
-            # Resize to create a thumbnail
-            thumbnail = resize_image(image_pil, size)
-            # Save the thumbnail to a BytesIO object
-            buffer = BytesIO()
-            thumbnail.save(buffer, format='JPEG')
-            buffer.seek(0)
-            thumbnails[size] = buffer
-
-        return thumbnails
-    else:
-        return None
-
-
-def resize_video(input_path, max_width, max_height):
-    # Capture the video
-    cap = cv2.VideoCapture(input_path)
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # Define the codec
-
-    # Get original video properties
-    fps = cap.get(cv2.CAP_PROP_FPS)
-    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-
-    # Calculate new dimensions
-    scaling_factor = min(max_width/width, max_height/height)
-    new_width = int(width * scaling_factor)
-    new_height = int(height * scaling_factor)
-
-    # Create a unique temporary file for the resized video
-    with tempfile.NamedTemporaryFile(delete=False, suffix='.mp4') as temp_output_file:
-        # Video writer to save the resized video
-        out = cv2.VideoWriter(temp_output_file.name, fourcc,
-                              fps, (new_width, new_height))
-
-        while True:
-            ret, frame = cap.read()
-            if not ret:
-                break
-
-            # Resize the frame
-            resized_frame = cv2.resize(
-                frame, (new_width, new_height), interpolation=cv2.INTER_AREA)
-            out.write(resized_frame)
-
-        # Release resources
-        cap.release()
-        out.release()
-
-        # Return the path of the temporary file
-        return temp_output_file.name
 
 
 ########################## Utilities: Image Processing ##########################
@@ -501,8 +329,6 @@ def determine_media_type(url):
     extension = os.path.splitext(url.lower())[1]
     if extension in ALLOWED_IMAGE_TYPES:
         return 'photo'
-    elif extension in ALLOWED_VIDEO_TYPES:
-        return 'video'
     else:
         return 'unknown'  # or raise an exception
 
@@ -514,6 +340,6 @@ def is_valid_image_type(filename):
 
 def is_valid_media_type(filename):
     extension = os.path.splitext(filename.lower())[1]
-    if extension in ALLOWED_IMAGE_TYPES or extension in ALLOWED_VIDEO_TYPES:
+    if extension in ALLOWED_IMAGE_TYPES:
         return True
     return False
