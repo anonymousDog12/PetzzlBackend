@@ -1,3 +1,4 @@
+from userblocking.models import BlockedUser
 from .models import Post, PostReaction
 from rest_framework.permissions import AllowAny
 from rest_framework.decorators import api_view, permission_classes
@@ -14,8 +15,12 @@ from petprofiles.models import PetProfile
 def like_post(request, post_id, pet_profile_id):
     try:
         post = Post.objects.get(pk=post_id)
-        pet_profile = PetProfile.objects.get(
-            pk=pet_profile_id, user=request.user)
+        pet_profile = PetProfile.objects.get(pk=pet_profile_id)
+
+        if pet_profile.user != request.user:
+            # User is trying to like a post with a pet profile they don't own
+            return Response({'message': 'Authorization error'}, status=status.HTTP_403_FORBIDDEN)
+
         reaction, created = PostReaction.objects.get_or_create(
             pet_profile=pet_profile,
             post=post,
@@ -33,8 +38,11 @@ def like_post(request, post_id, pet_profile_id):
 def unlike_post(request, post_id, pet_profile_id):
     try:
         post = Post.objects.get(pk=post_id)
-        pet_profile = PetProfile.objects.get(
-            pk=pet_profile_id, user=request.user)
+        pet_profile = PetProfile.objects.get(pk=pet_profile_id)
+
+        if pet_profile.user != request.user:
+            return Response({'message': 'Authorization error'}, status=status.HTTP_403_FORBIDDEN)
+
         try:
             reaction = PostReaction.objects.get(
                 pet_profile=pet_profile, post=post)
@@ -77,10 +85,26 @@ def check_like_status(request, post_id, pet_profile_id):
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def get_likers_of_post(request, post_id):
+    """
+    Retrieves a list of pet profiles that liked a specific post.
+    - For authenticated users, the list excludes pet profiles they have blocked.
+    - For unauthenticated users, it shows all pet profiles that liked the post.
+    - This approach ensures that the interaction data (likes) remains intact while respecting user privacy settings.
+    """
     try:
         post = Post.objects.get(pk=post_id)
+
         reactions = PostReaction.objects.filter(
             post=post, reaction_type='like').select_related('pet_profile')
+
+        # Check for authenticated user
+        if request.user.is_authenticated:
+            # Fetch IDs of users who are blocked by the current user
+            blocked_users_ids = BlockedUser.objects.filter(
+                blocker=request.user).values_list('blocked_id', flat=True)
+            reactions = reactions.exclude(
+                pet_profile__user_id__in=blocked_users_ids)
+
         likers = reactions.values(
             'pet_profile__pet_id',
             'pet_profile__profile_pic_thumbnail_small',
