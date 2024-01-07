@@ -19,7 +19,13 @@ Dashboard
 - If somehow user lands on a blocked user's dasboard page, no posts will show and it should say blocked
 
 Interactions
-- Historical likes will be mutually removed
+- Historical likes [Updated on 1/6/24]
+  - ~~Historical likes will be mutually removed~~ 
+  - Historical likes will be preserved; nothing gets deleted from the database.
+  - For authenticated users, the liker list for each post excludes pet profiles that the user has blocked.
+  - For unauthenticated users, the liker list includes all pet profiles that have liked the post.
+  - This approach ensures interaction data integrity and adapts to the user's privacy preferences. If a user unblocks another, their previously hidden likes will reappear in the liker list, thus no data is lost.
+
 - Future interactions (likes) will be prohibited
 
 
