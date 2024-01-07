@@ -9,7 +9,6 @@ import shortuuid
 from django.conf import settings
 from django.core.files.storage import default_storage
 from django.db import transaction
-from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from google.cloud import vision_v1
