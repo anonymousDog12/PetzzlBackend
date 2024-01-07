@@ -18,6 +18,8 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
+from userblocking.models import BlockedUser
+
 from .models import Media, PetProfile, Post
 
 # TODO: refactor this file
@@ -216,8 +218,15 @@ def get_feed(request):
     paginator = PageNumberPagination()
     paginator.page_size = 5
 
-    # Fetch all posts, including the latest post of the user
-    all_posts = Post.objects.order_by('-created_at')
+    # Fetch IDs of users who are blocked by the current user
+    blocked_users_ids = BlockedUser.objects.filter(
+        blocker=request.user
+    ).values_list('blocked_id', flat=True)
+
+    # Fetch all posts, excluding those from pet profiles owned by blocked users
+    all_posts = Post.objects.exclude(
+        pet__user_id__in=blocked_users_ids
+    ).order_by('-created_at')
 
     # Apply pagination to the queryset
     paginated_posts = paginator.paginate_queryset(all_posts, request)
