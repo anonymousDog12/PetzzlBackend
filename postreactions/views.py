@@ -17,8 +17,11 @@ def like_post(request, post_id, pet_profile_id):
         post = Post.objects.get(pk=post_id)
         pet_profile = PetProfile.objects.get(pk=pet_profile_id)
 
+        # Check if the post's pet profile's owner has blocked the current user's pet profile
+        if BlockedUser.objects.filter(blocker=post.pet.user, blocked=pet_profile.user).exists():
+            return Response({'message': 'Cannot interact with this post'}, status=status.HTTP_403_FORBIDDEN)
+
         if pet_profile.user != request.user:
-            # User is trying to like a post with a pet profile they don't own
             return Response({'message': 'Authorization error'}, status=status.HTTP_403_FORBIDDEN)
 
         reaction, created = PostReaction.objects.get_or_create(
