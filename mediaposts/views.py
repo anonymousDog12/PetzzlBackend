@@ -50,13 +50,15 @@ def create_post_view(request):
     if not media_files:
         return JsonResponse({'error': 'At least one media file is required'}, status=400)
 
-    image_count = sum(1 for file in media_files if os.path.splitext(
-        file.name.lower())[1] in ALLOWED_IMAGE_TYPES)
+    # First, validate file format
+    for media_file in media_files:
+        if os.path.splitext(media_file.name.lower())[1] not in ALLOWED_IMAGE_TYPES:
+            return JsonResponse({'error': f'Unsupported file type: {os.path.splitext(media_file.name.lower())[1]}'}, status=400)
 
-    if image_count > MAX_IMAGES_PER_POST:
+    if len(media_files) > MAX_IMAGES_PER_POST:
         return JsonResponse({'error': f'Cannot upload more than {MAX_IMAGES_PER_POST} images in a single post'}, status=400)
 
-    # Validate each image before saving
+    # Then, perform content policy check
     for media_file in media_files:
         if not is_suitable_pet_image_in_memory(media_file):
             return JsonResponse({
@@ -67,7 +69,6 @@ def create_post_view(request):
 
     # After validation, continue to upload and create post
     media_urls = upload_media_to_digital_ocean(media_files, pet_profile.pet_id)
-    # Check if media_urls is a JsonResponse (error case)
     if isinstance(media_urls, JsonResponse):
         return media_urls
 
@@ -384,15 +385,3 @@ def determine_media_type(url):
         return 'photo'
     else:
         return 'unknown'  # or raise an exception
-
-
-def is_valid_image_type(filename):
-    extension = os.path.splitext(filename.lower())[1]
-    return extension in ALLOWED_IMAGE_TYPES
-
-
-def is_valid_media_type(filename):
-    extension = os.path.splitext(filename.lower())[1]
-    if extension in ALLOWED_IMAGE_TYPES:
-        return True
-    return False
