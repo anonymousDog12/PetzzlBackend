@@ -17,8 +17,19 @@ def like_post(request, post_id, pet_profile_id):
         post = Post.objects.get(pk=post_id)
         pet_profile = PetProfile.objects.get(pk=pet_profile_id)
 
-        # Check if the post's pet profile's owner has blocked the current user's pet profile
-        if BlockedUser.objects.filter(blocker=post.pet.user, blocked=pet_profile.user).exists():
+        # Fetch IDs of users who have blocked the current user
+        user_blocked_by_ids = BlockedUser.objects.filter(
+            blocked=request.user).values_list('blocker_id', flat=True)
+
+        # Fetch IDs of users who are blocked by the current user
+        blocked_by_user_ids = BlockedUser.objects.filter(
+            blocker=request.user).values_list('blocked_id', flat=True)
+
+        # Combine both lists of IDs
+        all_blocked_users_ids = set(
+            list(user_blocked_by_ids) + list(blocked_by_user_ids))
+
+        if post.pet.user.id in all_blocked_users_ids or pet_profile.user.id in all_blocked_users_ids:
             return Response({'message': 'Cannot interact with this post'}, status=status.HTTP_403_FORBIDDEN)
 
         if pet_profile.user != request.user:
