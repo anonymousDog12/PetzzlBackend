@@ -14,6 +14,7 @@ urlpatterns = [
     path('api/petprofiles/', include('petprofiles.urls')),
     path('api/mediaposts/', include('mediaposts.urls')),
     path('api/postreactions/', include('postreactions.urls')),
+    path('api/userblocking/', include('userblocking.urls')),
 ]
 
 urlpatterns += [re_path(r'^.*',
