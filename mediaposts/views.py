@@ -1,4 +1,3 @@
-from google.cloud import vision_v1
 import os
 from datetime import datetime
 from io import BytesIO
@@ -10,8 +9,10 @@ import shortuuid
 from django.conf import settings
 from django.core.files.storage import default_storage
 from django.db import transaction
+from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
+from google.cloud import vision_v1
 from PIL import Image
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.pagination import PageNumberPagination
@@ -219,14 +220,23 @@ def get_feed(request):
     paginator = PageNumberPagination()
     paginator.page_size = 5
 
+    # Fetch IDs of users who have blocked the current user
+    blocked_by_others_ids = BlockedUser.objects.filter(
+        blocked=request.user
+    ).values_list('blocker_id', flat=True)
+
     # Fetch IDs of users who are blocked by the current user
-    blocked_users_ids = BlockedUser.objects.filter(
+    blocked_by_user_ids = BlockedUser.objects.filter(
         blocker=request.user
     ).values_list('blocked_id', flat=True)
 
-    # Fetch all posts, excluding those from pet profiles owned by blocked users
+    # Combine both lists of IDs
+    all_blocked_users_ids = set(
+        list(blocked_by_others_ids) + list(blocked_by_user_ids))
+
+    # Fetch all posts, excluding those from pet profiles owned by any of the blocked users
     all_posts = Post.objects.exclude(
-        pet__user_id__in=blocked_users_ids
+        pet__user_id__in=all_blocked_users_ids
     ).order_by('-created_at')
 
     # Apply pagination to the queryset

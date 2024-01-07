@@ -14,11 +14,13 @@
 
 Feed Visibility
 - Blocked users' posts won't show up on Feed
+- Mutually true
 
 Dashboard
 - If somehow user lands on a blocked user's dasboard page, no posts will show and it should say blocked
+- Mutually true
 
-Interactions
+Interactions --- Mutually true
 - Historical likes [Updated on 1/6/24]
   - ~~Historical likes will be mutually removed~~ 
   - Historical likes will be preserved; nothing gets deleted from the database.
