@@ -91,13 +91,6 @@ def get_pets_by_user(request, user_id):
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
-def get_all_pet_ids(request):
-    pet_ids = list(PetProfile.objects.values_list('pet_id', flat=True))
-    return Response({'pet_ids': pet_ids}, status=status.HTTP_200_OK)
-
-
-@api_view(['GET'])
-@permission_classes([AllowAny])
 # Add pet_id as an argument to the view
 def check_pet_id_uniqueness(request, pet_id):
     if pet_id:
