@@ -2,8 +2,16 @@
 
 ## Functionalities
 
-- User can click on 3 dots on the top right corner of each post to block
-- User can also go to a particular dashboard to block
+- Block can be initiated from
+  - User Dashboard, with the ... from header section
+  - After user wants to click on report from
+    - Feed page
+    - Other user post detail page
+
+
+Dashboard
+- After blocking, on user dashboard only pet id, pet name, and profile pic will be shown
+- Mutually true
 
 
 - Blocking a user will block ALL the pet profiles owned by that user
@@ -16,9 +24,6 @@ Feed Visibility
 - Blocked users' posts won't show up on Feed
 - Mutually true
 
-Dashboard
-- If somehow user lands on a blocked user's dasboard page, no posts will show and it should say blocked
-- Mutually true
 
 Interactions --- Mutually true
 - Historical likes [Updated on 1/6/24]
