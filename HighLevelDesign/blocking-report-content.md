@@ -80,8 +80,20 @@ Interactions --- Mutually true
 ## Functionalities
 
 - User can click on 3 dots on the top right corner of each post to report content
-- User can also do that from post detail page
+- User can also do that from post detail page, also 3 dots
+
+
+- Categorization of Reports: Allow users to categorize their reports (e.g., spam, harassment, inappropriate content). This can help in prioritizing and managing reports.
+
+
+- Confirmation Message: After a user reports a post, displaying a confirmation message can reassure them that their report has been filed.
+
 - Reported content will be immediately invisible to the current user
+
+
 - Users are given further options to block
 - Triggers an email to me, as well as writing it to database
+
+
+
 - If I do decide to remove, I will notify the user by email (will implement notification system later)
