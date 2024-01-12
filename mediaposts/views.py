@@ -312,8 +312,26 @@ def get_post_media(request, post_id, detail_level='overview'):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def get_pet_posts(request, pet_id):
+    # Fetch the pet profile
+    pet = PetProfile.objects.filter(
+        pet_id=pet_id).select_related('user').first()
+    if not pet:
+        return Response({'message': 'Pet profile not found'}, status=404)
+
+    user = request.user
+    # Fetch sets of users who have been blocked or have blocked the current user
+    blocked_users = set(BlockedUser.objects.filter(
+        blocker=user).values_list('blocked', flat=True))
+    users_blocking = set(BlockedUser.objects.filter(
+        blocked=user).values_list('blocker', flat=True))
+
+    # Combine the sets to check if there is a block in either direction
+    if pet.user.id in blocked_users or pet.user.id in users_blocking:
+        # No posts should be shown if the user is blocked or is blocking
+        return Response([])
+
     # Fetch all posts for a given pet profile
     pet_posts = Post.objects.filter(pet_id=pet_id).order_by('-created_at')
 
