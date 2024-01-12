@@ -93,7 +93,6 @@ def create_post_and_media(pet_profile, caption, media_data):
         Media.objects.create(
             post=post,
             media_url=item['full_size_url'],
-            thumbnail_medium_url=item['medium_thumbnail_url'],
             thumbnail_small_url=item['small_thumbnail_url'],
             media_type=determine_media_type(item['full_size_url']),
             order=index
@@ -123,13 +122,6 @@ def upload_media_to_digital_ocean(media_files, pet_profile_id):
             resized_image_info = save_and_upload_image(
                 resized_image, resized_path, 'full_size')
 
-            # Resize and upload medium thumbnail
-            medium_thumbnail = resize_image(image, 600)
-            medium_path = file_path.replace(
-                new_filename, f"{unique_filename}_medium{file_extension_with_dot}")
-            medium_thumbnail_info = save_and_upload_image(
-                medium_thumbnail, medium_path, 'thumbnail_medium')
-
             # Resize and upload small thumbnail
             small_thumbnail = resize_image(image, 300)
             small_path = file_path.replace(
@@ -139,7 +131,6 @@ def upload_media_to_digital_ocean(media_files, pet_profile_id):
 
             media_item = {
                 'full_size_url': resized_image_info['url'],
-                'medium_thumbnail_url': medium_thumbnail_info['url'],
                 'small_thumbnail_url': small_thumbnail_info['url']
             }
             media_data.append(media_item)
@@ -251,8 +242,6 @@ def convert_post_to_response_format(post):
     media_data = [{
         'media_id': media.id,
         'full_size_url': media.media_url,
-        'thumbnail_medium_url': media.thumbnail_medium_url,
-        # Add other media details here
     } for media in post.media.all()]
 
     pet_profile_pic_url = post.pet.profile_pic_thumbnail_small
@@ -296,19 +285,11 @@ def get_post_media(request, post_id, detail_level='overview'):
     created_at_str = post.created_at.strftime('%Y-%m-%d')
 
     # TODO: make detail levels global constants
-    if detail_level == 'overview':
-        first_media = post.media.first()  # Get the first media item
-        if first_media:
-            media_data.append({
-                'media_id': first_media.id,
-                'thumbnail_url': first_media.thumbnail_medium_url
-            })
-    elif detail_level == 'full':
+    if detail_level == 'full':
         for media in post.media.all():
             media_data.append({
                 'media_id': media.id,
                 'full_size_url': media.media_url,
-                # Add other media details here
             })
 
     response_data = {
@@ -375,7 +356,6 @@ def delete_post_view(request, post_id):
         # Delete media files from Digital Ocean
         for media in post.media.all():
             delete_media_from_digital_ocean(media.media_url)
-            delete_media_from_digital_ocean(media.thumbnail_medium_url)
             delete_media_from_digital_ocean(media.thumbnail_small_url)
 
         post.delete()

@@ -20,7 +20,6 @@ class Media(models.Model):
     media_type = models.CharField(max_length=50, choices=[
                                   ('photo', 'Photo'), ('video', 'Video')])
     media_url = models.URLField(max_length=500)
-    thumbnail_medium_url = models.URLField(max_length=500, null=True)
     thumbnail_small_url = models.URLField(max_length=500, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
