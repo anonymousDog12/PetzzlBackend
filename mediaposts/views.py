@@ -277,11 +277,21 @@ def convert_post_to_response_format(post):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def get_post_media(request, post_id, detail_level='overview'):
     post = get_object_or_404(Post, pk=post_id)
-    media_data = []
 
+    # Check if the current user is blocked by or has blocked the pet's owner
+    blocked_users = set(BlockedUser.objects.filter(
+        blocker=request.user).values_list('blocked', flat=True))
+    users_blocking = set(BlockedUser.objects.filter(
+        blocked=request.user).values_list('blocker', flat=True))
+
+    if post.pet.user.id in blocked_users or post.pet.user.id in users_blocking:
+        # No full post details should be shown if the user is blocked or is blocking
+        return Response({'message': 'Access denied'}, status=403)
+
+    media_data = []
     # Format the created_at date to a string (e.g., 'YYYY-MM-DD')
     created_at_str = post.created_at.strftime('%Y-%m-%d')
 
