@@ -11,10 +11,10 @@ urlpatterns = [
     path('auth/', include('djoser.urls')),
     path('auth/', include('djoser.urls.jwt')),
     path('api/accounts/', include('accounts.urls')),
-    path('api/petprofiles/', include('petprofiles.urls')),
-    path('api/mediaposts/', include('mediaposts.urls')),
-    path('api/postreactions/', include('postreactions.urls')),
-    path('api/userblocking/', include('userblocking.urls')),
+    path('api/petprofiles/', include('apps.petprofiles.urls')),
+    path('api/mediaposts/', include('apps.mediaposts.urls')),
+    path('api/postreactions/', include('apps.postreactions.urls')),
+    path('api/userblocking/', include('apps.userblocking.urls')),
 ]
 
 urlpatterns += [re_path(r'^.*',

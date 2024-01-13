@@ -1,6 +1,6 @@
 from django.db import models
 from django.core.exceptions import ValidationError
-from petprofiles.models import PetProfile
+from apps.petprofiles.models import PetProfile
 
 
 class Post(models.Model):

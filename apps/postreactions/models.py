@@ -1,6 +1,6 @@
 from django.db import models
-from mediaposts.models import Post
-from petprofiles.models import PetProfile
+from apps.mediaposts.models import Post
+from apps.petprofiles.models import PetProfile
 
 
 class PostReaction(models.Model):
