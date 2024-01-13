@@ -1,6 +1,6 @@
 from django.apps import AppConfig
 
 
-class UserblockingConfig(AppConfig):
+class ContentreportingConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'userblocking'
+    name = 'apps.contentreporting'

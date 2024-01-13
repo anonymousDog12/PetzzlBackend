@@ -1,13 +1,12 @@
-from userblocking.models import BlockedUser
-from .models import Post, PostReaction
+from apps.userblocking.models import BlockedUser
 from rest_framework.permissions import AllowAny
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from .models import PostReaction
-from mediaposts.models import Post
-from petprofiles.models import PetProfile
+from apps.mediaposts.models import Post
+from apps.petprofiles.models import PetProfile
 
 
 @api_view(['POST'])

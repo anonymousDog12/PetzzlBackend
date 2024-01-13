@@ -15,10 +15,10 @@ from google.cloud import vision_v1
 from PIL import Image
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from userblocking.models import BlockedUser
+from apps.userblocking.models import BlockedUser
 
 from .models import Media, PetProfile, Post
 

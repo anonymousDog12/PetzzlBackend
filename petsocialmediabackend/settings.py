@@ -46,10 +46,11 @@ INSTALLED_APPS = [
 
     # In-Project Apps
     'accounts',
-    'petprofiles',
-    'mediaposts',
-    'postreactions',
-    'userblocking',
+        'apps.petprofiles',
+    'apps.mediaposts',
+        'apps.postreactions',
+        'apps.userblocking',
+        'apps.contentreporting',
 
     # Third Party Apps
     'rest_framework',
