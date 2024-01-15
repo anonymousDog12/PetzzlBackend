@@ -79,14 +79,14 @@ Interactions --- Mutually true
 
 ## Functionalities
 
-- User can click on 3 dots on the top right corner of each post to report content
-- User can also do that from post detail page, also 3 dots
+- [x] User can click on 3 dots on the top right corner of each post to report content
+- [x] User can also do that from post detail page, also 3 dots
 
 
 - [x] Categorization of Reports: Allow users to categorize their reports (e.g., spam, harassment, inappropriate content). This can help in prioritizing and managing reports.
 
 
-- Confirmation Message: After a user reports a post, displaying a confirmation message can reassure them that their report has been filed.
+-[x]  Confirmation Message: After a user reports a post, displaying a confirmation message can reassure them that their report has been filed.
 
 - Reported content will be immediately invisible to the current user
 
