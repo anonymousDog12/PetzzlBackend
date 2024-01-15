@@ -36,3 +36,13 @@ class UserAccount(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.email
+
+
+class DeletedUserLog(models.Model):
+    anonymized_id = models.CharField(max_length=255, unique=True)
+    deletion_date = models.DateTimeField(auto_now_add=True)
+    # Customizable field for deletion reason
+    reason_detail = models.TextField(null=True, blank=True, max_length=500)
+
+    def __str__(self):
+        return f"DeletedUserLog {self.anonymized_id} on {self.deletion_date}"
