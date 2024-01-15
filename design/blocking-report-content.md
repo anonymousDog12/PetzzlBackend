@@ -3,35 +3,35 @@
 ## Functionalities
 
 - Block can be initiated from
-  - User Dashboard, with the ... from header section
-  - After user wants to click on report from
-    - Feed page
-    - Other user post detail page
+  - [x] User Dashboard, with the ... from header section
+  - [x] After user wants to click on report from
+    - [x] Feed page
+    - [x] Other user post detail page
 
 
 Dashboard
-- After blocking, on user dashboard only pet id, pet name, and profile pic will be shown
-- Mutually true
+- [x] After blocking, on user dashboard only pet id, pet name, and profile pic will be shown
+- [x] Mutually true
 
 
-- Blocking a user will block ALL the pet profiles owned by that user
-- To manage blocked users, user can see the list in settings, and un-block a user
-- Need to wait 48 hours to re-block a user
-- List will show "<pet_id> and associated profiles"
+- [x] Blocking a user will block ALL the pet profiles owned by that user
+- [x] To manage blocked users, user can see the list in settings, and un-block a user
+- [ ] Need to wait 48 hours to re-block a user
+- [x] List will show "<pet_id> and associated profiles"
 
 
 Feed Visibility
-- Blocked users' posts won't show up on Feed
-- Mutually true
+- [x] Blocked users' posts won't show up on Feed
+- [x] Mutually true
 
 
 Interactions --- Mutually true
 - Historical likes [Updated on 1/6/24]
   - ~~Historical likes will be mutually removed~~ 
-  - Historical likes will be preserved; nothing gets deleted from the database.
-  - For authenticated users, the liker list for each post excludes pet profiles that the user has blocked.
-  - For unauthenticated users, the liker list includes all pet profiles that have liked the post.
-  - This approach ensures interaction data integrity and adapts to the user's privacy preferences. If a user unblocks another, their previously hidden likes will reappear in the liker list, thus no data is lost.
+  - [x] Historical likes will be preserved; nothing gets deleted from the database.
+  - [x] For authenticated users, the liker list for each post excludes pet profiles that the user has blocked.
+  - [x] For unauthenticated users, the liker list includes all pet profiles that have liked the post.
+  - [x] This approach ensures interaction data integrity and adapts to the user's privacy preferences. If a user unblocks another, their previously hidden likes will reappear in the liker list, thus no data is lost.
 
 - Future interactions (likes) will be prohibited
 
@@ -88,12 +88,12 @@ Interactions --- Mutually true
 
 -[x]  Confirmation Message: After a user reports a post, displaying a confirmation message can reassure them that their report has been filed.
 
-- Reported content will be immediately invisible to the current user
+- [x] Reported content will be immediately invisible to the current user
 
 
-- Users are given further options to block
-- Triggers an email to me, as well as writing it to database
+- [x] Users are given further options to block
+- [x] Triggers an email to me, as well as writing it to database
 
 
 
-- If I do decide to remove, I will notify the user by email (will implement notification system later)
+- [ ] If I do decide to remove, I will notify the user by email (will implement notification system later)
