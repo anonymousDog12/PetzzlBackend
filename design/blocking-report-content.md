@@ -83,7 +83,7 @@ Interactions --- Mutually true
 - User can also do that from post detail page, also 3 dots
 
 
-- Categorization of Reports: Allow users to categorize their reports (e.g., spam, harassment, inappropriate content). This can help in prioritizing and managing reports.
+- [x] Categorization of Reports: Allow users to categorize their reports (e.g., spam, harassment, inappropriate content). This can help in prioritizing and managing reports.
 
 
 - Confirmation Message: After a user reports a post, displaying a confirmation message can reassure them that their report has been filed.

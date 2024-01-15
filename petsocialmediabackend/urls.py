@@ -15,6 +15,7 @@ urlpatterns = [
     path('api/mediaposts/', include('apps.mediaposts.urls')),
     path('api/postreactions/', include('apps.postreactions.urls')),
     path('api/userblocking/', include('apps.userblocking.urls')),
+    path('api/contentreporting/', include('apps.contentreporting.urls')),
 ]
 
 urlpatterns += [re_path(r'^.*',
