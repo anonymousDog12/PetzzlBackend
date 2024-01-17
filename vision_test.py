@@ -38,8 +38,8 @@ def is_suitable_pet_image(image_path, confidence_threshold=0.5):
 
         # Defining thresholds for inappropriate content
         thresholds = {
-            'adult': vision_v1.Likelihood.POSSIBLE,
-            'violence': vision_v1.Likelihood.POSSIBLE
+            'adult': vision_v1.Likelihood.VERY_LIKELY,
+            'violence': vision_v1.Likelihood.VERY_LIKELY
         }
 
         if safe.adult < thresholds['adult'] and safe.violence < thresholds['violence']:
@@ -65,6 +65,6 @@ if __name__ == "__main__":
         exit()
 
     # Replace 'path_to_your_image.jpg' with the path to your test image file
-    test_image_path = '/Users/erin/Desktop/lp_image2.jpeg'
+    test_image_path = '/Users/erin/Desktop/1.png'
     result = is_suitable_pet_image(test_image_path)
     print("Is this image suitable for Petzzl app?", result)

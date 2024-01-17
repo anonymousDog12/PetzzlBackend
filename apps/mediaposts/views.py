@@ -8,6 +8,7 @@ import pillow_heif
 import shortuuid
 from django.conf import settings
 from django.core.files.storage import default_storage
+from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.db import transaction
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
@@ -17,8 +18,8 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from apps.contentreporting.models import ReportedContent
 
+from apps.contentreporting.models import ReportedContent
 from apps.userblocking.models import BlockedUser
 
 from .models import Media, PetProfile, Post
@@ -51,16 +52,26 @@ def create_post_view(request):
     if not media_files:
         return JsonResponse({'error': 'At least one media file is required'}, status=400)
 
-    # First, validate file format
-    for media_file in media_files:
-        if os.path.splitext(media_file.name.lower())[1] not in ALLOWED_IMAGE_TYPES:
-            return JsonResponse({'error': f'Unsupported file type: {os.path.splitext(media_file.name.lower())[1]}'}, status=400)
+    converted_media_files = []
 
-    if len(media_files) > MAX_IMAGES_PER_POST:
+    # Validate file format and convert if necessary
+    for media_file in media_files:
+        file_extension = os.path.splitext(media_file.name.lower())[1]
+        if file_extension not in ALLOWED_IMAGE_TYPES:
+            return JsonResponse({'error': f'Unsupported file type: {file_extension}'}, status=400)
+
+        # Convert HEIC to JPEG
+        if file_extension == '.heic':
+            image = Image.open(media_file)
+            media_file = convert_image_to_jpeg(image, media_file.name)
+
+        converted_media_files.append(media_file)
+
+    if len(converted_media_files) > MAX_IMAGES_PER_POST:
         return JsonResponse({'error': f'Cannot upload more than {MAX_IMAGES_PER_POST} images in a single post'}, status=400)
 
-    # Then, perform content policy check
-    for media_file in media_files:
+    # Perform content policy check
+    for media_file in converted_media_files:
         if not is_suitable_pet_image_in_memory(media_file):
             return JsonResponse({
                 'error': 'Content policy violation',
@@ -69,7 +80,8 @@ def create_post_view(request):
             }, status=400)
 
     # After validation, continue to upload and create post
-    media_urls = upload_media_to_digital_ocean(media_files, pet_profile.pet_id)
+    media_urls = upload_media_to_digital_ocean(
+        converted_media_files, pet_profile.pet_id)
     if isinstance(media_urls, JsonResponse):
         return media_urls
 
@@ -109,7 +121,7 @@ def upload_media_to_digital_ocean(media_files, pet_profile_id):
 
     for file in media_files:
         unique_filename = shortuuid.ShortUUID().random(length=8)
-        file_extension_with_dot = os.path.splitext(file.name.lower())[1]
+        file_extension_with_dot = '.jpg'
         new_filename = f"{unique_filename}{file_extension_with_dot}"
         file_path = f"{settings.ENV_FOLDER}/media_posts/{pet_profile_id}/{date_str}/{new_filename}"
 
@@ -150,17 +162,17 @@ def resize_image(image, max_size):
     return image.resize(new_size, Image.Resampling.LANCZOS)
 
 
+def convert_image_to_jpeg(image, filename):
+    buffer = BytesIO()
+    new_filename = filename.rsplit('.', 1)[0] + '.jpg'
+    image.convert('RGB').save(buffer, 'JPEG')
+    buffer.seek(0)
+    return InMemoryUploadedFile(buffer, 'ImageField', new_filename, 'image/jpeg', buffer.tell(), None)
+
+
 def save_and_upload_image(image, file_path, tag):
     buffer = BytesIO()
-
-    # Convert image to JPEG
-    if image.format != 'JPEG':
-        # Change file extension to .jpg
-        file_path = file_path.rsplit('.', 1)[0] + '.jpg'
-
-    # Convert image to RGB mode, necessary for JPEG
-    image = image.convert('RGB')
-    image.save(buffer, format='JPEG')  # Save image as JPEG
+    image.save(buffer, format='JPEG')
     buffer.seek(0)
     default_storage.save(file_path, buffer)
     media_url = default_storage.url(file_path)
@@ -190,8 +202,8 @@ def is_suitable_pet_image_in_memory(image_file, confidence_threshold=0.5):
         response_safe_search = client.safe_search_detection(image=image)
         safe = response_safe_search.safe_search_annotation
         thresholds = {
-            'adult': vision_v1.Likelihood.POSSIBLE,
-            'violence': vision_v1.Likelihood.POSSIBLE
+            'adult': vision_v1.Likelihood.VERY_LIKELY,
+            'violence': vision_v1.Likelihood.VERY_LIKELY
         }
 
         if safe.adult < thresholds['adult'] and safe.violence < thresholds['violence']:
