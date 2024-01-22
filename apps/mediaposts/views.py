@@ -182,6 +182,10 @@ def save_and_upload_image(image, file_path, tag):
 
 
 def is_suitable_pet_image_in_memory(image_file, confidence_threshold=0.5):
+    """
+    Valid dog photos allowed only
+    """
+
     client = vision_v1.ImageAnnotatorClient()
 
     content = image_file.read()
@@ -189,16 +193,16 @@ def is_suitable_pet_image_in_memory(image_file, confidence_threshold=0.5):
 
     response_labels = client.label_detection(image=image)
     labels = response_labels.label_annotations
-    pet_related_terms = ['pet', 'dog', 'cat', 'animal', 'horse', 'turtle',
-                         'bird', 'fish', 'hamster', 'rabbit', 'reptile']
-    is_animal = False
+    # Focus only on dog-related terms
+    dog_related_terms = ['dog', 'canine', 'puppy']
+    is_dog = False
 
     for label in labels:
-        if label.description.lower() in pet_related_terms and label.score >= confidence_threshold:
-            is_animal = True
+        if label.description.lower() in dog_related_terms and label.score >= confidence_threshold:
+            is_dog = True
             break
 
-    if is_animal:
+    if is_dog:
         response_safe_search = client.safe_search_detection(image=image)
         safe = response_safe_search.safe_search_annotation
         thresholds = {

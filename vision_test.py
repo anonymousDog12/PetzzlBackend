@@ -16,8 +16,7 @@ def is_suitable_pet_image(image_path, confidence_threshold=0.5):
     # Checking for pets/animals
     response_labels = client.label_detection(image=image)
     labels = response_labels.label_annotations
-    pet_related_terms = ['pet', 'dog', 'cat', 'animal', 'horse', 'turtle',
-                         'bird', 'fish', 'hamster', 'rabbit', 'reptile']
+    pet_related_terms = ['dog', 'canine', 'puppy']
     is_animal = False
     for label in labels:
         print(f"Label: {label.description}, Score: {label.score}")
@@ -65,6 +64,6 @@ if __name__ == "__main__":
         exit()
 
     # Replace 'path_to_your_image.jpg' with the path to your test image file
-    test_image_path = '/Users/erin/Desktop/1.png'
+    test_image_path = '/Users/erin/Desktop/Pet-Images/Photos/Cat/cat-5614854_960_720.jpg'
     result = is_suitable_pet_image(test_image_path)
     print("Is this image suitable for Petzzl app?", result)
