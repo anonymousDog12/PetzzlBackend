@@ -8,7 +8,7 @@ User = get_user_model()
 
 class ReportReason(models.TextChoices):
     I_JUST_DONT_LIKE_IT = 'DL', 'I Just Don\'t Like It'
-    NOT_A_PET_PHOTO = 'NP', 'Not a Pet Photo'
+    NOT_A_DOG_PHOTO = 'ND', 'Not a Dog Photo'
     SELF_PROMOTION = 'SP', 'Self Promotion'
     INAPPROPRIATE_CONTENT = 'IC', 'Inappropriate Content'
     COPYRIGHT_ISSUE = 'IP', 'Intellectual Property Violation'
