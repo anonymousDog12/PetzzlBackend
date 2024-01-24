@@ -1,6 +1,7 @@
-from django.db import models
 from django.contrib.auth import get_user_model
-from django.core.validators import MinLengthValidator, RegexValidator
+from django.core.validators import (MaxLengthValidator, MinLengthValidator,
+                                    RegexValidator)
+from django.db import models
 
 User = get_user_model()
 
@@ -57,7 +58,11 @@ class PetProfile(models.Model):
         null=True, blank=True)  # 100px
     gender = models.CharField(
         max_length=1, choices=GENDER_CHOICES, null=True, blank=True)
-    bio = models.TextField(null=True, blank=True)
+    bio = models.TextField(
+        null=True,
+        blank=True,
+        validators=[MaxLengthValidator(500)]
+    )
 
     # Automatically generated fields
     created_at = models.DateTimeField(auto_now_add=True)
