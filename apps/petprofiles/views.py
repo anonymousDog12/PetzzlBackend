@@ -8,12 +8,16 @@ from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
+from django.db import transaction
 from django.shortcuts import get_object_or_404
 from PIL import Image
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+
+from apps.mediaposts.models import Post
+from apps.mediaposts.views import delete_media_from_digital_ocean
 
 from .models import PetProfile
 from .serializers import PetProfileSerializer
@@ -42,7 +46,7 @@ def pet_profile_list_create(request):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-@api_view(['GET', 'PUT', 'DELETE'])
+@api_view(['GET', 'PUT'])
 @permission_classes([AllowAny])
 def pet_profile_detail(request, pet_id):
     pet_profile = get_object_or_404(PetProfile, pet_id=pet_id)
@@ -71,6 +75,36 @@ def pet_profile_detail(request, pet_id):
                 return Response({"message": "You do not have permission to delete this pet profile."}, status=status.HTTP_403_FORBIDDEN)
     else:
         return Response({"detail": "Authentication credentials were not provided."}, status=status.HTTP_401_UNAUTHORIZED)
+
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_pet_profile(request, pet_id):
+    try:
+        pet_profile = PetProfile.objects.get(pet_id=pet_id, user=request.user)
+    except PetProfile.DoesNotExist:
+        return Response({'error': 'Pet profile not found or not authorized to delete'}, status=404)
+
+    with transaction.atomic():
+        # Delete profile pictures from Digital Ocean
+        if pet_profile.profile_pic_regular:
+            delete_media_from_digital_ocean(pet_profile.profile_pic_regular)
+        if pet_profile.profile_pic_thumbnail_small:
+            delete_media_from_digital_ocean(
+                pet_profile.profile_pic_thumbnail_small)
+
+        # Delete all related media posts
+        posts = Post.objects.filter(pet=pet_profile)
+        for post in posts:
+            for media in post.media.all():
+                delete_media_from_digital_ocean(media.media_url)
+                delete_media_from_digital_ocean(media.thumbnail_small_url)
+            post.delete()
+
+        # Now that all related media files are deleted, we can delete the pet profile
+        pet_profile.delete()
+
+    return Response({'message': 'Pet profile and related media have been deleted successfully'}, status=200)
 
 
 @api_view(['GET'])
