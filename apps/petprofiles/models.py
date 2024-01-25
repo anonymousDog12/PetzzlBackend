@@ -73,6 +73,7 @@ class PetProfile(models.Model):
 
     def save(self, *args, **kwargs):
         self.pet_name = ' '.join(self.pet_name.split())
+        self.pet_id = self.pet_id.lower()
         super(PetProfile, self).save(*args, **kwargs)
 
     class Meta:
