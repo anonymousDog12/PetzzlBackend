@@ -3,16 +3,20 @@ import os
 import boto3
 from django.contrib.auth import get_user_model
 from django.db import transaction
+from django.http import JsonResponse
 from rest_framework import status
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from accounts.models import DeletedUserLog
 
+from accounts.models import DeletedUserLog
 from apps.mediaposts.models import Post
 from apps.mediaposts.views import delete_media_from_digital_ocean
 from apps.petprofiles.models import PetProfile
 from apps.petprofiles.views import delete_image_from_do_space
+
+from .utils import get_or_create_user, verify_apple_identity_token
 
 User = get_user_model()
 
@@ -84,3 +88,25 @@ class DeleteAccountView(APIView):
 
             # Return a response to indicate successful deletion
             return Response({"message": "User account and all related data have been deleted."}, status=status.HTTP_204_NO_CONTENT)
+
+
+#  Apple Sign in
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def apple_sign_in(request):
+    identity_token = request.data.get('identity_token')
+    first_name = request.data.get('first_name')  # Get first name from request
+    last_name = request.data.get('last_name')  # Get last name from request
+
+    if not identity_token:
+        return JsonResponse({'error': 'Missing identity token'}, status=400)
+
+    try:
+        decoded_token = verify_apple_identity_token(identity_token)
+        # Pass first_name and last_name to get_or_create_user function
+        user = get_or_create_user(decoded_token, first_name, last_name)
+        jwt_token = user.generate_jwt()
+        return JsonResponse({'token': jwt_token, 'user_id': user.id})
+    except ValueError as e:
+        return JsonResponse({'error': str(e)}, status=403)

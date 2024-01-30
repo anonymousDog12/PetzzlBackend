@@ -9,6 +9,10 @@ tmp/*
 
 tmp*
 
+keys
+
+keys/*
+
 ### Django ###
 *.log
 *.pot
