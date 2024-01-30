@@ -67,7 +67,8 @@ ALLOWED_HOSTS = [
 
 if ENV == DEV:
     ALLOWED_HOSTS += [
-        'localhost'
+        'localhost',
+        '192.168.1.11',
     ]
 
 
@@ -272,3 +273,8 @@ else:
     ENV_FOLDER = 'prod'
 
 PROFILE_PIC_LOCATION = f"{ENV_FOLDER}/profile_pic"
+
+
+# Apple
+
+APPLE_CLIENT_ID = os.getenv('APPLE_CLIENT_ID')
