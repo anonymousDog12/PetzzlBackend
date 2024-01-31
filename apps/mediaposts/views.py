@@ -70,14 +70,15 @@ def create_post_view(request):
     if len(converted_media_files) > MAX_IMAGES_PER_POST:
         return JsonResponse({'error': f'Cannot upload more than {MAX_IMAGES_PER_POST} images in a single post'}, status=400)
 
+    # Removing this for now, since it misclassifies a lot of images
     # Perform content policy check
-    for media_file in converted_media_files:
-        if not is_suitable_pet_image_in_memory(media_file):
-            return JsonResponse({
-                'error': 'Content policy violation',
-                'error_type': 'inappropriate_content',
-                'message': 'Our AI filter spotted something that might not meet our content guidelines. Please review and try again. If this seems mistaken, please contact admin@petzzl.app for help.',
-            }, status=400)
+    # for media_file in converted_media_files:
+    #     if not is_suitable_pet_image_in_memory(media_file):
+    #         return JsonResponse({
+    #             'error': 'Content policy violation',
+    #             'error_type': 'inappropriate_content',
+    #             'message': 'Our AI filter spotted something that might not meet our content guidelines. Please review and try again. If this seems mistaken, please contact admin@petzzl.app for help.',
+    #         }, status=400)
 
     # After validation, continue to upload and create post
     media_urls = upload_media_to_digital_ocean(

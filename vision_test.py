@@ -64,6 +64,6 @@ if __name__ == "__main__":
         exit()
 
     # Replace 'path_to_your_image.jpg' with the path to your test image file
-    test_image_path = '/Users/erin/Desktop/Pet-Images/Photos/Cat/cat-5614854_960_720.jpg'
+    test_image_path = '/Users/erin/Desktop/Pet-Images/Photos/Dog5/dog-5723355_1280.jpg'
     result = is_suitable_pet_image(test_image_path)
     print("Is this image suitable for Petzzl app?", result)
