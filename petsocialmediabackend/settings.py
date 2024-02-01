@@ -211,6 +211,9 @@ if ENV == DEV:
             'NAME': 'petsocialmediabackend',
             'HOST': 'localhost',
             'PORT': '3306',
+            'OPTIONS': {
+                'charset': 'utf8mb4',
+            },
             'USER': 'root',
             'PASSWORD': ''
         }
@@ -222,6 +225,9 @@ else:
             'NAME': 'defaultdb',
             'HOST': 'db-mysql-sfo3-33365-do-user-14981029-0.c.db.ondigitalocean.com',
             'PORT': '25060',
+            'OPTIONS': {
+                'charset': 'utf8mb4',
+            },
             'USER': 'doadmin',
             'PASSWORD': os.environ.get('DATABASE_PASSWORD_DIGITALOCEAN')
         }
