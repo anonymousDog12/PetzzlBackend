@@ -16,7 +16,7 @@ from apps.mediaposts.views import delete_media_from_digital_ocean
 from apps.petprofiles.models import PetProfile
 from apps.petprofiles.views import delete_image_from_do_space
 
-from .utils import get_or_create_user, verify_apple_identity_token
+from .utils import add_subscriber_to_mailchimp, get_or_create_user, verify_apple_identity_token
 
 User = get_user_model()
 
@@ -104,8 +104,19 @@ def apple_sign_in(request):
 
     try:
         decoded_token = verify_apple_identity_token(identity_token)
-        # Pass first_name and last_name to get_or_create_user function
-        user = get_or_create_user(decoded_token, first_name, last_name)
+        user, created = get_or_create_user(
+            decoded_token, first_name, last_name)
+
+        # Check if the user was created to avoid adding existing users to Mailchimp again
+        if created:
+            try:
+                add_subscriber_to_mailchimp(
+                    user.email, user.first_name, user.last_name)
+            except Exception as e:
+                # Log the error but do not disrupt the user creation process
+                print(
+                    f"Failed to add subscriber {user.email} to Mailchimp: {e}")
+
         jwt_token = user.generate_jwt()
         return JsonResponse({'token': jwt_token, 'user_id': user.id})
     except ValueError as e:

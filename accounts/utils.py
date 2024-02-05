@@ -39,4 +39,26 @@ def get_or_create_user(user_data, first_name=None, last_name=None):
         }
     )
 
-    return user
+    return user, created
+
+
+def add_subscriber_to_mailchimp(email, first_name, last_name):
+    url = f'https://us9.api.mailchimp.com/3.0/lists/{settings.MAILCHIMP_LIST_ID}/members/'
+    data = {
+        'email_address': email,
+        'status': 'subscribed',
+        'merge_fields': {
+            'FNAME': first_name,
+            'LNAME': last_name,
+        },
+    }
+    headers = {
+        'Authorization': f'Bearer {settings.MAILCHIMP_API_KEY}',
+        'Content-Type': 'application/json'
+    }
+
+    response = requests.post(url, json=data, headers=headers)
+    if response.status_code != 200:
+        # Handle failure: log it, send a notification, etc.
+        print(
+            f"Failed to add subscriber {email} to Mailchimp: {response.json()}")
