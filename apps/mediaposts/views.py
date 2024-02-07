@@ -360,12 +360,14 @@ def get_pet_posts(request, pet_id):
 
     response_data = []
     for post in pet_posts:
+        media_count = post.media.count()
         first_media = post.media.first()  # Get the first media item
         if first_media:
             post_data = {
                 'post_id': post.id,
                 'caption': post.caption,
-                'thumbnail_url': first_media.thumbnail_small_url
+                'thumbnail_url': first_media.thumbnail_small_url,
+                'has_multiple_images': media_count > 1
                 # Add any other necessary post details
             }
             response_data.append(post_data)
