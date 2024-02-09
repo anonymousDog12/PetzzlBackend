@@ -12,7 +12,7 @@ from rest_framework.views import APIView
 
 from accounts.models import DeletedUserLog
 from apps.mediaposts.models import Post
-from apps.mediaposts.views import delete_media_from_digital_ocean
+from apps.mediaposts.views.delete_post_views import delete_media_from_digital_ocean
 from apps.petprofiles.models import PetProfile
 from apps.petprofiles.views import delete_image_from_do_space
 
