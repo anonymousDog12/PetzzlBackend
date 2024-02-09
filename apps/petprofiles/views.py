@@ -17,7 +17,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from apps.mediaposts.models import Post
-from apps.mediaposts.views import delete_media_from_digital_ocean
+from apps.mediaposts.views.delete_post_views import delete_media_from_digital_ocean
 
 from .models import PetProfile
 from .serializers import PetProfileSerializer
