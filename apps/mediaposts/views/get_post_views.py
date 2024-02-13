@@ -14,21 +14,19 @@ def get_post_media(request, post_id, detail_level='overview'):
     post = get_object_or_404(Post, pk=post_id)
     user = request.user
 
-    # Check if the post has been reported by the current user or if there's a block
     if ReportedContent.objects.filter(reporter=user, reported_post=post).exists() or \
        post.pet.user.id in set(BlockedUser.objects.filter(blocker=user).values_list('blocked', flat=True)) or \
        post.pet.user.id in set(BlockedUser.objects.filter(blocked=user).values_list('blocker', flat=True)):
         return Response({'message': 'Access denied'}, status=403)
 
     media_data = []
-    # Format the created_at date to a string (e.g., 'YYYY-MM-DD')
     created_at_str = post.created_at.strftime('%Y-%m-%d')
 
-    # TODO: make detail levels global constants
     if detail_level == 'full':
         for media in post.media.all():
             media_data.append({
                 'media_id': media.id,
+                'media_type': media.media_type,
                 'full_size_url': media.media_url,
             })
 
@@ -36,7 +34,7 @@ def get_post_media(request, post_id, detail_level='overview'):
         'post_id': post.id,
         'caption': post.caption,
         'media': media_data,
-        'posted_date': created_at_str,  # Include the post creation date
+        'posted_date': created_at_str,
     }
 
     return Response(response_data)
