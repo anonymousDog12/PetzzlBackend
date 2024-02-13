@@ -54,6 +54,7 @@ def convert_post_to_response_format(post):
     media_data = [{
         'media_id': media.id,
         'full_size_url': media.media_url,
+        'media_type': media.media_type,
     } for media in post.media.all()]
 
     pet_profile_pic_url = post.pet.profile_pic_thumbnail_small
