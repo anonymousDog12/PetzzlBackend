@@ -19,7 +19,7 @@ pillow = "*"
 pillow-heif = "*"
 opencv-python-headless = "*"
 google-cloud-vision = "*"
-
+charset-normalizer = "*"
 
 [dev-packages]
 
