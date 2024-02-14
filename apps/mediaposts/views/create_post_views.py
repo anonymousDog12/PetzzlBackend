@@ -118,34 +118,27 @@ def process_and_upload_videos(video_files, pet_profile_id):
                     temp_file.write(chunk)
                 video_file_path = temp_file.name
 
-        # Check if resizing is needed
-        width, height = get_video_resolution(video_file_path)
-        if width > MAX_VIDEO_WIDTH or height > MAX_VIDEO_HEIGHT:
-            # Resize and convert the video
-            resized_video_path = resize_video(video_file_path)
-        else:
-            # Use the original video without resizing
-            resized_video_path = video_file_path
+        # Create and upload a thumbnail for the video
+        unique_filename = shortuuid.ShortUUID().random(length=8)
+        thumbnail_info = create_video_thumbnail(
+            video_file_path, pet_profile_id, unique_filename)
+        if thumbnail_info is None:
+            return JsonResponse({'error': 'Failed to create video thumbnail'}, status=500)
 
         # Check the video duration
-        duration = get_video_duration(resized_video_path)
+        duration = get_video_duration(video_file_path)
         if duration > MAX_VIDEO_DURATION:
             return JsonResponse({'error': f'Video length exceeds the maximum allowed duration of {MAX_VIDEO_DURATION / 60} minutes'}, status=400)
 
-        # Upload the (resized) video
-        with open(resized_video_path, 'rb') as video_to_upload:
-            unique_filename = shortuuid.ShortUUID().random(length=8)
+        # TODO: Add Video Resize Logic
+
+        # Upload the video
+        with open(video_file_path, 'rb') as video_to_upload:
             # Ensuring the file is in MP4 format
             new_filename = f"{unique_filename}.mp4"
             file_path = f"{settings.ENV_FOLDER}/media_posts/{pet_profile_id}/{date_str}/{new_filename}"
             default_storage.save(file_path, video_to_upload)
             media_url = default_storage.url(file_path)
-
-        # Create and upload a thumbnail for the video
-        thumbnail_info = create_video_thumbnail(
-            resized_video_path, pet_profile_id, unique_filename)
-        if thumbnail_info is None:
-            return JsonResponse({'error': 'Failed to create video thumbnail'}, status=500)
 
         media_item = {
             'media_url': media_url,
@@ -284,70 +277,6 @@ def get_video_resolution(file_path):
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     cap.release()
     return width, height
-
-
-def resize_video(input_path, output_suffix='.mp4', max_width=1080, max_height=1080):
-    # Capture the video
-    cap = cv2.VideoCapture(input_path)
-    if not cap.isOpened():
-        raise ValueError("Unable to open the video file.")
-
-    # Define the codec and create a VideoWriter object
-    # Attempting to use 'avc1' codec for better compression. Fallback to 'mp4v' if 'avc1' is not available
-    try:
-        fourcc = cv2.VideoWriter_fourcc(*'avc1')
-    except:
-        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-
-    # Get original video properties
-    fps = cap.get(cv2.CAP_PROP_FPS)
-    orig_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    orig_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-
-    # Calculate new dimensions while maintaining the aspect ratio
-    aspect_ratio = orig_width / orig_height
-    if orig_width > orig_height:  # Landscape or square video
-        new_width = min(orig_width, max_width)
-        new_height = int(new_width / aspect_ratio)
-    else:  # Portrait video
-        new_height = min(orig_height, max_height)
-        new_width = int(new_height * aspect_ratio)
-
-    # Create a temporary file for the resized video
-    temp_output_file = tempfile.NamedTemporaryFile(
-        delete=False, suffix=output_suffix)
-
-    # Adjust the frame rate to potentially reduce file size
-    # Cap the frame rate at 30 FPS to reduce file size
-    target_fps = min(fps, 30)
-
-    # Video writer to save the resized video
-    out = cv2.VideoWriter(temp_output_file.name, fourcc,
-                          target_fps, (new_width, new_height))
-
-    while True:
-        ret, frame = cap.read()
-        if not ret:
-            break
-
-        # Resize the frame
-        resized_frame = cv2.resize(
-            frame, (new_width, new_height), interpolation=cv2.INTER_AREA)
-        out.write(resized_frame)
-
-    # Release resources
-    cap.release()
-    out.release()
-
-    # Check the size of the resized video file, and if it's larger than the original, return the original path
-    original_size = os.path.getsize(input_path)
-    resized_size = os.path.getsize(temp_output_file.name)
-    if resized_size > original_size:
-        # Clean up the resized file since we won't be using it
-        os.remove(temp_output_file.name)
-        return input_path  # Return the original file path if resizing resulted in a larger file
-
-    return temp_output_file.name
 
 
 ############################### Utility Functions ###############################

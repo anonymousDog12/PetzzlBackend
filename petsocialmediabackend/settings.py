@@ -289,3 +289,30 @@ PROFILE_PIC_LOCATION = f"{ENV_FOLDER}/profile_pic"
 # Apple
 
 APPLE_CLIENT_ID = os.getenv('APPLE_CLIENT_ID')
+
+if ENV == PROD:
+    LOGGING = {
+        'version': 1,
+        'disable_existing_loggers': False,
+        'formatters': {
+            'verbose': {
+                'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+                'style': '{',
+            },
+        },
+        'handlers': {
+            'file': {
+                'level': 'DEBUG',
+                'class': 'logging.FileHandler',
+                'filename': '/home/erin/debug.log',
+                'formatter': 'verbose',
+            },
+        },
+        'loggers': {
+            'myapp': {
+                'handlers': ['file'],
+                'level': 'DEBUG',
+                'propagate': True,
+            },
+        },
+    }
