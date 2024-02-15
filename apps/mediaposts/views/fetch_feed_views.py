@@ -51,11 +51,17 @@ def get_feed(request):
 
 
 def convert_post_to_response_format(post):
-    media_data = [{
-        'media_id': media.id,
-        'full_size_url': media.media_url,
-        'media_type': media.media_type,
-    } for media in post.media.all()]
+    media_data = []
+    for media in post.media.all():
+        media_info = {
+            'media_id': media.id,
+            'full_size_url': media.media_url,
+            'media_type': media.media_type,
+        }
+        # If the media type is video, include the thumbnail URL
+        if media.media_type == 'video' and media.thumbnail_small_url:
+            media_info['thumbnail_url'] = media.thumbnail_small_url
+        media_data.append(media_info)
 
     pet_profile_pic_url = post.pet.profile_pic_thumbnail_small
     pet_id = post.pet.pet_id
@@ -70,6 +76,6 @@ def convert_post_to_response_format(post):
         'media': media_data,
         'pet_id': pet_id,
         'pet_profile_pic': pet_profile_pic_url,
-        'pet_type': pet_type,  # Include pet type
-        'posted_date': created_at_str  # Include the post creation date
+        'pet_type': pet_type,
+        'posted_date': created_at_str
     }
