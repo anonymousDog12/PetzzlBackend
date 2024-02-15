@@ -252,7 +252,7 @@ def create_video_thumbnail(video_file_path, pet_profile_id, unique_filename):
     frame_image = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
 
     # Resize the image
-    thumbnail = resize_image(frame_image, 300)
+    thumbnail = resize_image(frame_image, 600)
 
     # Generate the thumbnail file path
     thumbnail_filename = f"{unique_filename}_thumbnail.jpg"
