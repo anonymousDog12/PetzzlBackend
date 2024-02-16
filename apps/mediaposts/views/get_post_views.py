@@ -28,6 +28,7 @@ def get_post_media(request, post_id, detail_level='overview'):
                 'media_id': media.id,
                 'media_type': media.media_type,
                 'full_size_url': media.media_url,
+                'thumbnail_url': media.thumbnail_small_url,
             })
 
     response_data = {
@@ -79,12 +80,13 @@ def get_pet_posts(request, pet_id):
         media_count = post.media.count()
         first_media = post.media.first()  # Get the first media item
         if first_media:
+            post_type = 'video' if first_media.media_type == 'video' else 'photo'
             post_data = {
                 'post_id': post.id,
                 'caption': post.caption,
                 'thumbnail_url': first_media.thumbnail_small_url,
-                'has_multiple_images': media_count > 1
-                # Add any other necessary post details
+                'has_multiple_images': media_count > 1,
+                'post_type': post_type
             }
             response_data.append(post_data)
 
