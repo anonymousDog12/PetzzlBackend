@@ -8,17 +8,16 @@ User = get_user_model()
 
 class PetProfile(models.Model):
 
-    # This is obsolete now, since we are focusing on dogs only
-    # PET_TYPE_CHOICES = (
-    #     ('dog', 'Dog'),
-    #     ('cat', 'Cat'),
-    #     ('bird', 'Bird'),
-    #     ('fish', 'Fish'),
-    #     ('horse', 'Horse'),
-    #     ('rabbit', 'Rabbit'),
-    #     ('turtle', 'Turtle'),
-    #     ('other', 'Other')
-    # )
+    PET_TYPE_CHOICES = (
+        ('dog', 'Dog'),
+        ('cat', 'Cat'),
+        ('bird', 'Bird'),
+        ('fish', 'Fish'),
+        ('horse', 'Horse'),
+        ('rabbit', 'Rabbit'),
+        ('turtle', 'Turtle'),
+        ('other', 'Other')
+    )
 
     GENDER_CHOICES = (
         ('m', 'Male'),
@@ -49,7 +48,7 @@ class PetProfile(models.Model):
             )
         ]
     )
-    pet_type = models.CharField(max_length=50, default='dog', editable=False)
+    pet_type = models.CharField(max_length=50, choices=PET_TYPE_CHOICES)
 
     # Optional fields
     birthday = models.DateField(null=True, blank=True)
