@@ -177,7 +177,7 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'admin@petzzl.app'
 EMAIL_HOST_PASSWORD = os.environ.get('GMAIL_EMAIL_PASSWORD')
-DEFAULT_FROM_EMAIL = 'DogDomain by Petzzl <admin@petzzl.app>'
+DEFAULT_FROM_EMAIL = 'Petzzl Family <admin@petzzl.app>'
 
 
 # MailChimp Setup
