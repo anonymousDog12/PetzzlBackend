@@ -221,6 +221,9 @@ def convert_image_to_jpeg(image, filename):
 
 def save_and_upload_image(image, file_path, tag):
     buffer = BytesIO()
+    if image.mode in ('RGBA', 'LA', 'P'):  # Add 'P' mode to include palletized images
+        # Convert to RGB mode. Note that this discards transparency information.
+        image = image.convert('RGB')
     image.save(buffer, format='JPEG')
     buffer.seek(0)
     default_storage.save(file_path, buffer)
