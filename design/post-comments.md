@@ -40,7 +40,7 @@ These can be a bit vague. Wonder if there are better phrases
 ## DB Design
 
 
-**Comment**
+**Post Comments**
 
 - Comment ID
 - Pet Profile ID 
@@ -49,5 +49,5 @@ These can be a bit vague. Wonder if there are better phrases
 - Created At
 - Updated At
 
-**Comment Reaction** (a separating django app from comment)
+**Comment Reactions** (a separating django app from comment)
 - Will add later
