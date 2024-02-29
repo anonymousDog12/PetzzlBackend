@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     'apps.postreactions',
     'apps.userblocking',
     'apps.contentreporting',
+    'apps.postcomments',
 
     # Third Party Apps
     'rest_framework',
