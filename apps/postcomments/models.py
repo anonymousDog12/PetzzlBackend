@@ -1,4 +1,3 @@
-from django.core.validators import MinLengthValidator
 from django.db import models
 
 from apps.mediaposts.models import Post
@@ -10,11 +9,7 @@ class PostComment(models.Model):
         PetProfile, on_delete=models.CASCADE, related_name='comments')  # Author of the comment
     post = models.ForeignKey(
         Post, on_delete=models.CASCADE, related_name='comments')
-    content = models.CharField(
-        max_length=500,
-        # Ensures content has at least 2 characters
-        validators=[MinLengthValidator(2)]
-    )
+    content = models.CharField(max_length=500)
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True)
 

@@ -58,7 +58,6 @@ def convert_post_to_response_format(post):
             'full_size_url': media.media_url,
             'media_type': media.media_type,
         }
-        # If the media type is video, include the thumbnail URL
         if media.media_type == 'video' and media.thumbnail_small_url:
             media_info['thumbnail_url'] = media.thumbnail_small_url
         media_data.append(media_info)
@@ -66,9 +65,22 @@ def convert_post_to_response_format(post):
     pet_profile_pic_url = post.pet.profile_pic_thumbnail_small
     pet_id = post.pet.pet_id
     pet_type = post.pet.pet_type
-
-    # Format the created_at date to a string (e.g., 'YYYY-MM-DD')
     created_at_str = post.created_at.strftime('%Y-%m-%d')
+
+    # Fetching the latest comment for the post
+    latest_comment = post.comments.order_by('-created_at').first()
+    if latest_comment:
+        latest_comment_data = {
+            'comment_id': latest_comment.id,
+            'content': latest_comment.content,
+            'pet_id': latest_comment.pet_profile.pet_id,
+            'created_at': latest_comment.created_at.strftime('%Y-%m-%d %H:%M:%S')
+        }
+    else:
+        latest_comment_data = None
+
+    # Fetching the total comment count for the post
+    comment_count = post.comments.count()
 
     return {
         'post_id': post.id,
@@ -77,5 +89,7 @@ def convert_post_to_response_format(post):
         'pet_id': pet_id,
         'pet_profile_pic': pet_profile_pic_url,
         'pet_type': pet_type,
-        'posted_date': created_at_str
+        'posted_date': created_at_str,
+        'latest_comment': latest_comment_data,
+        'comment_count': comment_count
     }

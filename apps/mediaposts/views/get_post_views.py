@@ -20,7 +20,7 @@ def get_post_media(request, post_id, detail_level='overview'):
         return Response({'message': 'Access denied'}, status=403)
 
     media_data = []
-    created_at_str = post.created_at.strftime('%Y-%m-%d')
+    created_at_str = post.created_at.strftime('%Y-%m-%d %H:%M:%S')
 
     if detail_level == 'full':
         for media in post.media.all():
@@ -31,11 +31,27 @@ def get_post_media(request, post_id, detail_level='overview'):
                 'thumbnail_url': media.thumbnail_small_url,
             })
 
+    # Fetch the latest comment for the post
+    latest_comment_instance = post.comments.order_by('-created_at').first()
+    if latest_comment_instance:
+        latest_comment = {
+            "comment_id": latest_comment_instance.id,
+            "content": latest_comment_instance.content,
+            "pet_id": latest_comment_instance.pet_profile.pet_id,
+            "created_at": latest_comment_instance.created_at.strftime('%Y-%m-%d %H:%M:%S')
+        }
+    else:
+        latest_comment = None
+
+    comment_count = post.comments.count()
+
     response_data = {
         'post_id': post.id,
         'caption': post.caption,
         'media': media_data,
         'posted_date': created_at_str,
+        'latest_comment': latest_comment,  # Add latest comment details here
+        'comment_count': comment_count  # Add comment count here
     }
 
     return Response(response_data)
