@@ -1,6 +1,7 @@
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 
 from apps.contentreporting.models import ReportedContent
 from apps.mediaposts.models import Post
@@ -12,6 +13,11 @@ from apps.userblocking.models import BlockedUser
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_feed(request):
+    # Extract current_pet_id from query parameters
+    current_pet_id = request.query_params.get('current_pet_id', None)
+    if not current_pet_id:
+        return Response({"error": "current_pet_id is required"}, status=400)
+
     paginator = PageNumberPagination()
     paginator.page_size = 5
 
