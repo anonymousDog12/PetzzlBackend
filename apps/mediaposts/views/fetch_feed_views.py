@@ -5,6 +5,7 @@ from rest_framework.response import Response
 
 from apps.contentreporting.models import ReportedContent
 from apps.mediaposts.models import Post
+from apps.postreactions.models import PostReaction
 from apps.userblocking.models import BlockedUser
 
 # TODO: Enhance feed content
@@ -51,12 +52,13 @@ def get_feed(request):
     paginated_posts = paginator.paginate_queryset(all_posts, request)
 
     # Convert posts to the response format
-    feed = [convert_post_to_response_format(post) for post in paginated_posts]
+    feed = [convert_post_to_response_format(
+        post, current_pet_id) for post in paginated_posts]
 
     return paginator.get_paginated_response(feed)
 
 
-def convert_post_to_response_format(post):
+def convert_post_to_response_format(post, current_pet_id):
     media_data = []
     for media in post.media.all():
         media_info = {
@@ -88,6 +90,14 @@ def convert_post_to_response_format(post):
     # Fetching the total comment count for the post
     comment_count = post.comments.count()
 
+    # Fetching the total like count for the post
+    like_count = PostReaction.objects.filter(
+        post=post, reaction_type='like').count()
+
+    # Checking if the current pet has liked the post
+    has_liked = PostReaction.objects.filter(
+        post=post, pet_profile=current_pet_id, reaction_type='like').exists()
+
     return {
         'post_id': post.id,
         'caption': post.caption,
@@ -97,5 +107,7 @@ def convert_post_to_response_format(post):
         'pet_type': pet_type,
         'posted_date': created_at_str,
         'latest_comment': latest_comment_data,
-        'comment_count': comment_count
+        'comment_count': comment_count,
+        'like_count': like_count,
+        'has_liked': has_liked,
     }
